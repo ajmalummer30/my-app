@@ -5,13 +5,16 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'jotai';
+import AuthInitializer from './components/AuthInitializer';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <Provider>
       <BrowserRouter>
-        <App />
+       <AuthInitializer>
+          <App />
+        </AuthInitializer>
       </BrowserRouter>
     </Provider>
   </React.StrictMode>

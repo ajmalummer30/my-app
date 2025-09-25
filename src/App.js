@@ -12,6 +12,7 @@ import RequireAuth from './components/RequireAuth';
 import AuthInitializer from './components/AuthInitializer';
 import { Navigate } from 'react-router-dom';
 import UserProfile from './pages/UserProfile';
+import Profile from './pages/Profile';
 
 const App = () => {
   return (
@@ -30,7 +31,8 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
-          <Route path="profile" element={<UserProfile />} />
+          <Route path="userprofile" element={<UserProfile />} />
+          <Route path="profile" element={<Profile />} />
 
           <Route path="dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />

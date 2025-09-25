@@ -4,7 +4,7 @@ import { auth } from '../components/Firebase';  // your Firebase config
 import { useSetAtom } from 'jotai';
 import { userAtom } from '../store/AuthAtom';
 
-export default function AuthInitializer() {
+export default function AuthInitializer({ children }) {
   const setUser = useSetAtom(userAtom);
 
   useEffect(() => {
@@ -19,5 +19,5 @@ export default function AuthInitializer() {
     return () => unsubscribe();
   }, [setUser]);
 
-  return null;  // no UI rendered
+  return children;  // no UI rendered
 }

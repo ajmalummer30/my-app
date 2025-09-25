@@ -48,7 +48,7 @@ export default function Login() {
       return ;
     } */
 
-       setUser(firebaseUser ); // switch UI to user info
+       //setUser(firebaseUser ); // switch UI to user info
       console.log("User signed in:", firebaseUser);
      
     } catch (error) {
