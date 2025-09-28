@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -15,16 +16,17 @@ const firebaseConfig = {
   storageBucket: "visitor-management-f46e8.firebasestorage.app",
   messagingSenderId: "1073869558746",
   appId: "1:1073869558746:web:b89d35cb8982a599ffa6e3",
-  measurementId: "G-WB0W4WYFY8"
+  measurementId: "G-WB0W4WYFY8",
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
+
 const provider = new GoogleAuthProvider();
 
-
 export const db = getFirestore(app);
+export const storage = getStorage(app); // 'app' is your Firebase app instance
 
 export { auth, provider };
