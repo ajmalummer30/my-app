@@ -220,7 +220,7 @@ export default function Login() {
                 </button>
               </div>
             </form>
-            {/* Phone login section */}
+            {/* google login section */}
 
             <div>
               <div className="mt-10 flex items-center gap-x-6">
@@ -263,6 +263,24 @@ export default function Login() {
                 </a>
               </div>
               {errorMsg && <div className="text-red-500 mt-2">{errorMsg}</div>}
+            </div>
+
+            {/* Add phone login button below */}
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  // Navigate to phone login route
+                  // if using React Router:
+                  navigate("/phonelogin");
+
+                  // Or simple redirect:
+                  //window.location.href = "/phone-login";
+                }}
+                className="w-full max-w-sm rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+              >
+                Login with Phone
+              </button>
             </div>
           </div>
 

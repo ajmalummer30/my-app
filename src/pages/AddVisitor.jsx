@@ -5,8 +5,10 @@ import { db } from "../components/Firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import ImageCropper from "../components/ImageCropper"; // External component
 import AddvisitorTab from "../components/AddvisitorTab";
-import { PhoneInput } from "react-phone-input-custom";
 import { MuiTelInput } from "mui-tel-input";
+import CountrySelect from "../components/country";
+import { CountrySelector } from "react-international-phone";
+import TextField from "@mui/material/TextField";
 
 const storage = getStorage();
 
@@ -16,6 +18,7 @@ const VisitorForm = () => {
     email: "",
     visitReason: "",
     Mobile: "",
+    nationality: "",
   });
 
   const [documents, setDocuments] = useState({
@@ -181,7 +184,13 @@ const VisitorForm = () => {
       setMessage("✅ Visitor and documents submitted successfully!");
 
       // Reset
-      setVisitor({ name: "", email: "", visitReason: "", Mobile: "" });
+      setVisitor({
+        name: "",
+        email: "",
+        visitReason: "",
+        Mobile: "",
+        nationality: "",
+      });
       setDocuments({
         passport: {
           documentNumber: "",
@@ -227,23 +236,21 @@ const VisitorForm = () => {
           placeholder="Full Name"
           className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
         />
-        <input
-          type="email"
-          name="email"
-          value={visitor.email}
-          onChange={handleVisitorChange}
-          placeholder="Email"
-          required
-          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
-        />
-        <input
-          type="email"
-          name="email"
-          value={visitor.email}
-          onChange={handleVisitorChange}
-          placeholder="Email"
-          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
-        />
+
+        <div className="w-full">
+          <TextField
+            type="email"
+            name="email" // Sets the name attribute, useful for forms
+            value={visitor.email} // Controlled component’s current value
+            onChange={handleVisitorChange} // Function called when input changes
+            placeholder="Email" // Placeholder text inside the input
+            label="Email"
+            id="outlined-basic"
+            variant="outlined"
+            fullWidth
+          />
+        </div>
+
         <input
           type="text"
           name="visitReason"
@@ -271,6 +278,15 @@ const VisitorForm = () => {
                   paddingY: 1.5,
                 },
               },
+            }}
+          />
+        </div>
+        <div>
+          <CountrySelect
+            value={visitor.nationality}
+            onChange={(selectedCountry) => {
+              console.log("Selected Country from form:", selectedCountry); // ✅ Console works
+              setVisitor((prev) => ({ ...prev, nationality: selectedCountry }));
             }}
           />
         </div>

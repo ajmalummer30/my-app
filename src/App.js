@@ -15,6 +15,7 @@ import UserProfile from "./pages/UserProfile";
 import EditProfile from "./pages/EditProfile";
 import AddVisitorForm from "./pages/AddVisitor";
 import PhoneAuth from "./Helperfunctions/PhoneAuth";
+import { ThemeProvider } from "@material-tailwind/react";
 
 const App = () => {
   return (
