@@ -112,6 +112,7 @@ const PhoneAuth = () => {
                 <div>
                   <MuiTelInput
                     defaultCountry="SA"
+                    onlyCountries={["SA"]}
                     value={phone}
                     onChange={(phone) => setPhone(phone)}
                     forceCallingCode

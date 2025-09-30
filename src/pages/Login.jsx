@@ -6,11 +6,12 @@ import { userAtom, isLoggedInAtom } from "../store/AuthAtom";
 import { useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../components/Firebase"; // adjust the path
-
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { loginWithEmailPassword } from "../Helperfunctions/authhelper";
 
 export default function Login() {
+  const { t } = useTranslation();
   const [errorMsg, setErrorMsg] = useState("");
   const setUser = useSetAtom(userAtom);
   const [email, setEmail] = useState("");
@@ -123,7 +124,7 @@ export default function Login() {
             className="mx-auto h-10 w-auto not-dark:hidden"
           />
           <h2 className="mt-6 text-center text-2xl/9 font-bold tracking-tight text-gray-900 dark:text-white">
-            Sign in to your account
+            {t("Sign in to your account")}
           </h2>
         </div>
 

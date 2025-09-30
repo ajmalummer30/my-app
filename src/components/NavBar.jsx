@@ -12,7 +12,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "./Firebase";
 import { useNavigate } from "react-router-dom";
 import { Link, NavLink } from "react-router-dom";
-
+import LanguageSwitcher from "../Helperfunctions/languageswitcher";
 import { useSetAtom } from "jotai";
 import { useAtomValue } from "jotai";
 import { userAtom } from "../store/AuthAtom"; // adjust path
@@ -49,6 +49,8 @@ export default function Navbar() {
   return (
     <Disclosure
       as="nav"
+      //className="relative bg-white dark:bg-gray-900 dark:after:pointer-events-none dark:after:absolute dark:after:inset-x-0 dark:after:bottom-0 dark:after:h-px dark:after:bg-gray-300"
+
       className="relative bg-gray-800 dark:bg-gray-800/50 dark:after:pointer-events-none dark:after:absolute dark:after:inset-x-0 dark:after:bottom-0 dark:after:h-px dark:after:bg-white/10"
     >
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -152,6 +154,9 @@ export default function Navbar() {
                 </MenuItem>
               </MenuItems>
             </Menu>
+          </div>
+          <div className="flex justify-end px-6 pt-2">
+            <LanguageSwitcher />
           </div>
         </div>
       </div>

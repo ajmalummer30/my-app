@@ -9,10 +9,14 @@ import { MuiTelInput } from "mui-tel-input";
 import CountrySelect from "../components/country";
 import { CountrySelector } from "react-international-phone";
 import TextField from "@mui/material/TextField";
+import { useTranslation } from "react-i18next";
 
 const storage = getStorage();
 
 const VisitorForm = () => {
+  const { i18n } = useTranslation();
+  const isArabic = i18n.language === "ar" || i18n.language === "ar-SA";
+  const [error, setError] = useState("");
   const [visitor, setVisitor] = useState({
     name: "",
     email: "",
@@ -55,6 +59,26 @@ const VisitorForm = () => {
   // Handle visitor field change
   const handleVisitorChange = (e) => {
     const { name, value } = e.target;
+
+    const isArabic = i18n.language === "ar";
+
+    const arabicRegex = /^[\u0600-\u06FF\s]*$/;
+    const englishRegex = /^[A-Za-z\s]*$/;
+
+    const isValid = isArabic
+      ? arabicRegex.test(value)
+      : englishRegex.test(value);
+
+    if (!isValid) {
+      setError(
+        isArabic
+          ? "يرجى كتابة الأحرف العربية فقط" // Arabic only
+          : "Please use English letters only" // English only
+      );
+      return; // ⛔ Block update
+    }
+
+    setError(""); // ✅ Clear error if valid
     setVisitor((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -228,14 +252,22 @@ const VisitorForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Visitor Inputs */}
+        <label
+          htmlFor="fullName"
+          className="block text-sm font-medium text-gray-700 dark:text-white mb-1"
+        >
+          {i18n.language === "ar" ? "الاسم الكامل" : "Full Name"}
+        </label>
         <input
           type="text"
           name="name"
           value={visitor.name}
           onChange={handleVisitorChange}
-          placeholder="Full Name"
+          placeholder={i18n.language === "ar" ? "الاسم الكامل" : "Full Name"}
           className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
+          dir={i18n.language === "ar" ? "rtl" : "ltr"}
         />
+        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
 
         <div className="w-full">
           <TextField
@@ -262,12 +294,16 @@ const VisitorForm = () => {
         <div>
           <MuiTelInput
             defaultCountry="SA"
+            onlyCountries={["SA"]}
             value={visitor.Mobile}
+            dir={i18n.language === "ar" ? "rtl" : "ltr"}
             onChange={(phone) =>
               setVisitor((prev) => ({ ...prev, Mobile: phone }))
             }
+            placeholder={isArabic ? "أدخل رقم الجوال" : "Enter phone number"}
             forceCallingCode
             focusOnSelectCountry
+            disableFormatting={true}
             fullWidth
             variant="outlined"
             InputProps={{
