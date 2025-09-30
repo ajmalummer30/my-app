@@ -2,20 +2,38 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
+import { useTranslation } from "react-i18next";
 
 export default function CountrySelect({ value, onChange }) {
+  const { t } = useTranslation();
   return (
     <Autocomplete
       id="country-select-demo"
       sx={{ width: "100%" }}
       options={countries}
       autoHighlight
-      getOptionLabel={(option) => option.label || ""}
+      //getOptionLabel={(option) => option.label || ""}
+      getOptionLabel={(option) => {
+        // Use translation for country label; fallback to English label
+        return t(`countries.${option.code}`, option.label || "");
+      }}
       isOptionEqualToValue={(option, value) => option.code === value?.code}
       value={value || null}
       onChange={(event, newValue) => {
         console.log("Country selected:", newValue); // ✅ This should now work
         onChange?.(newValue); // Call parent handler
+      }}
+      filterOptions={(options, state) => {
+        // Custom filter for search to match translation as well
+        const inputValue = state.inputValue.toLowerCase();
+
+        return options.filter((option) => {
+          const translatedLabel = t(
+            `countries.${option.code}`,
+            option.label
+          ).toLowerCase();
+          return translatedLabel.includes(inputValue);
+        });
       }}
       renderOption={(props, option) => {
         const { key, ...optionProps } = props;
@@ -33,14 +51,16 @@ export default function CountrySelect({ value, onChange }) {
               src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
               alt=""
             />
-            {option.label} ({option.code}) +{option.phone}
+            {/* {option.label} ({option.code}) +{option.phone} */}
+            {t(`countries.${option.code}`, option.label)} ({option.code}) +
+            {option.phone}
           </Box>
         );
       }}
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Nationality"
+          label={t("Nationality")}
           inputProps={{
             ...params.inputProps,
             autoComplete: "new-password",
