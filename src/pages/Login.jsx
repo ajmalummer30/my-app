@@ -29,19 +29,22 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
+        console.log("true");
         // New user, create profile with isAdminApproved false
-        await setDoc(userRef, {
+        /* await setDoc(userRef, {
           displayName: firebaseUser.displayName,
           email: firebaseUser.email,
           role: "user",
-          isAdminApproved: false,
+          isAdminApproved: false, 
           createdAt: serverTimestamp(),
           photoURL: firebaseUser.photoURL,
-        });
+        }); */
+        setErrorMsg("User does not exist. Please contact admin.");
+        return;
       }
 
       // Force refresh token to get latest claims (important for isAdmin)
-      await firebaseUser.getIdToken(true);
+      //await firebaseUser.getIdToken(true);
 
       // Get user profile data
       const userData = (await getDoc(userRef)).data();
@@ -87,13 +90,18 @@ export default function Login() {
       setUser(combinedUser);
       navigate("/app");
     } catch (error) {
-      console.error("Login error:", error);
       switch (error.code) {
         case "auth/user-not-found":
           setErrorMsg("No user found with this email.");
           break;
         case "auth/wrong-password":
           setErrorMsg("Incorrect password.");
+          break;
+        case "auth/invalid-email":
+          setErrorMsg("Invalid email format.");
+          break;
+        case "auth/invalid-credential":
+          setErrorMsg("Invalid email or password.");
           break;
         default:
           setErrorMsg("Login failed. Please try again.");
@@ -180,34 +188,42 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <div className="flex gap-3">
                   <div className="flex h-6 shrink-0 items-center">
-                    <div className="group grid size-4 grid-cols-1">
-                      <input
-                        id="remember-me"
-                        name="remember-me"
-                        type="checkbox"
-                        className="col-start-1 row-start-1 appearance-none rounded-sm border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 dark:border-white/10 dark:bg-white/5 dark:checked:border-indigo-500 dark:checked:bg-indigo-500 dark:indeterminate:border-indigo-500 dark:indeterminate:bg-indigo-500 dark:focus-visible:outline-indigo-500 forced-colors:appearance-auto"
-                      />
-                      <svg
-                        fill="none"
-                        viewBox="0 0 14 14"
-                        className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-disabled:stroke-gray-950/25 dark:group-has-disabled:stroke-white/25"
-                      >
-                        <path
-                          d="M3 8L6 11L11 3.5"
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="opacity-0 group-has-checked:opacity-100"
+                    <label
+                      htmlFor="remember-me"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <div className="group grid size-4 grid-cols-1">
+                        <input
+                          id="remember-me"
+                          name="remember-me"
+                          type="checkbox"
+                          className="col-start-1 row-start-1 appearance-none rounded-sm border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 dark:border-white/10 dark:bg-white/5 dark:checked:border-indigo-500 dark:checked:bg-indigo-500 dark:indeterminate:border-indigo-500 dark:indeterminate:bg-indigo-500 dark:focus-visible:outline-indigo-500 forced-colors:appearance-auto"
                         />
-                        <path
-                          d="M3 7H11"
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="opacity-0 group-has-indeterminate:opacity-100"
-                        />
-                      </svg>
-                    </div>
+                        <svg
+                          fill="none"
+                          viewBox="0 0 14 14"
+                          className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-disabled:stroke-gray-950/25 dark:group-has-disabled:stroke-white/25"
+                        >
+                          <path
+                            d="M3 8L6 11L11 3.5"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="opacity-0 group-has-checked:opacity-100"
+                          />
+                          <path
+                            d="M3 7H11"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="opacity-0 group-has-indeterminate:opacity-100"
+                          />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-700 dark:text-white">
+                        Remember me
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>

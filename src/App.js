@@ -36,6 +36,7 @@ const App = () => {
         {/* Login route */}
         <Route path="/login" element={<Login />} />
         <Route path="/phonelogin" element={<PhoneAuth />} />
+        <Route path="/addvisitor" element={<AddVisitorForm />} />
 
         {/* Protected Routes */}
         <Route element={<RequireAuth />}>
@@ -45,7 +46,7 @@ const App = () => {
             <Route path="contact" element={<Contact />} />
             <Route path="userprofile" element={<UserProfile />} />
             <Route path="editprofile" element={<EditProfile />} />
-            <Route path="addvisitor" element={<AddVisitorForm />} />
+            {/* <Route path="addvisitor" element={<AddVisitorForm />} /> */}
 
             <Route path="dashboard" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />

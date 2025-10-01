@@ -8,8 +8,14 @@ import AddvisitorTab from "../components/AddvisitorTab";
 import { MuiTelInput } from "mui-tel-input";
 import CountrySelect from "../components/country";
 import { CountrySelector } from "react-international-phone";
-import TextField from "@mui/material/TextField";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../Helperfunctions/languageswitcher";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import TextField from "@mui/material/TextField";
+import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
+import { Box } from "@mui/material";
 
 const storage = getStorage();
 
@@ -17,6 +23,7 @@ const VisitorForm = () => {
   const { i18n } = useTranslation();
   const isArabic = i18n.language === "ar" || i18n.language === "ar-SA";
   const [error, setError] = useState("");
+  const [value, setValue] = React.useState(null);
   const [visitor, setVisitor] = useState({
     name: "",
     email: "",
@@ -246,8 +253,15 @@ const VisitorForm = () => {
     setCropModal({ open: false, type: null, imageSrc: null });
   };
 
+  const handleChange = (newValue) => {
+    setValue(newValue);
+  };
+
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md space-y-8">
+      <div className="flex justify-end px-6 pt-2">
+        <LanguageSwitcher />
+      </div>
       <h2 className="text-2xl font-bold text-gray-800">Visitor Information</h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -294,7 +308,7 @@ const VisitorForm = () => {
         <div>
           <MuiTelInput
             defaultCountry="SA"
-            onlyCountries={["SA"]}
+            //onlyCountries={["SA"]}
             value={visitor.Mobile}
             dir={i18n.language === "ar" ? "rtl" : "ltr"}
             onChange={(phone) =>
@@ -317,15 +331,33 @@ const VisitorForm = () => {
             }}
           />
         </div>
-        <div>
-          <CountrySelect
-            value={visitor.nationality}
-            onChange={(selectedCountry) => {
-              console.log("Selected Country from form:", selectedCountry); // ✅ Console works
-              setVisitor((prev) => ({ ...prev, nationality: selectedCountry }));
-            }}
-          />
-        </div>
+
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            {/* Date Picker */}
+            <DatePicker
+              label="Date of Birth"
+              value={value}
+              onChange={handleChange}
+              format="dd/MM/yyyy"
+              renderInput={(params) => (
+                <TextField {...params} fullWidth variant="outlined" />
+              )}
+            />
+
+            {/* Country Select */}
+            <CountrySelect
+              value={visitor.nationality}
+              onChange={(selectedCountry) => {
+                console.log("Selected Country from form:", selectedCountry);
+                setVisitor((prev) => ({
+                  ...prev,
+                  nationality: selectedCountry,
+                }));
+              }}
+            />
+          </div>
+        </LocalizationProvider>
 
         <AddvisitorTab
           documents={documents}

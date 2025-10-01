@@ -39,13 +39,16 @@ export default function AuthInitializer({ children }) {
             const data = userSnap.data();
             const combined = { ...firebaseUser, ...data };
             setUser(combined);
-            console.log("set user from authinitialiser");
+            console.log("user assigned to user atom from authinitialiser");
           } else {
-            setUser(firebaseUser);
+            console.warn("🚫 User does not exist in Firestore. Logging out...");
+            setUser(null);
+            await auth.signOut(); // ❗ Force logout
           }
         } catch (err) {
           console.error("Error fetching user profile", err);
-          setUser(firebaseUser);
+          setUser(null);
+          await auth.signOut(); // ❗ Defensive fallback
         }
       } else {
         setUser(null);

@@ -10,11 +10,14 @@
     "@material-tailwind/react": "^2.1.10",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
+    "@mui/x-date-pickers": "^8.12.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.18",
     "firebase": "^12.3.0",
     "i18next": "^21.8.15",
     "i18next-browser-languagedetector": "^6.1.5",
@@ -59,7 +62,10 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "postcss": "^8.5.6",
-    "typescript": "^5.9.2"
+    "prettier": "^3.6.2",
+    "typescript": "^4.9.5"
   }
 }
