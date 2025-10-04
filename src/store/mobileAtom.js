@@ -3,3 +3,4 @@ import { atom } from "jotai";
 
 export const mobileAtom = atom("");
 export const mobileErrorAtom = atom("");
+export const userContactAtom = atom({ type: "", value: "" });

@@ -21,7 +21,7 @@ const navigation = [
   { name: "Home", href: "/app", current: true },
   { name: "About", href: "/app/About", current: false },
   { name: "Contact", href: "/app/contact", current: false },
-  { name: "Addvisitor", href: "/app/addvisitor", current: false },
+  { name: "addvisitor", href: "/app/addvisitor", current: false },
   { name: "Dashboard", href: "/app/dashboard", current: false },
 ];
 
@@ -49,9 +49,7 @@ export default function Navbar() {
   return (
     <Disclosure
       as="nav"
-      //className="relative bg-white dark:bg-gray-900 dark:after:pointer-events-none dark:after:absolute dark:after:inset-x-0 dark:after:bottom-0 dark:after:h-px dark:after:bg-gray-300"
-
-      className="relative bg-gray-800 dark:bg-gray-800/50 dark:after:pointer-events-none dark:after:absolute dark:after:inset-x-0 dark:after:bottom-0 dark:after:h-px dark:after:bg-white/10"
+      className="fixed top-0 left-0 md:left-64 right-0 z-30 h-16 bg-gray-800 dark:bg-gray-800/50 dark:after:pointer-events-none dark:after:absolute dark:after:inset-x-0 dark:after:bottom-0 dark:after:h-px dark:after:bg-white/10"
     >
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">

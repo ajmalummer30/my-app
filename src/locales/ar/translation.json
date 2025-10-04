@@ -2,6 +2,20 @@
     "sign_in_account": "تسجيل الدخول إلى حسابك",
     "home": "الرئيسية",
     "Nationality": "الجنسية",
+    "Date Of Birth": "تاريخ الميلاد",
+    "Reason For Visit": "سبب الزيارة",
+    "email": "البريد الإلكتروني",
+    "Vehicle Plate number": "رقم لوحة المركبة",
+    "Vehicle Type": "نوع المركبة",
+    "vehicleType": {
+        "selectPlaceholder": "اختر نوع المركبة",
+        "taxi": "تاكسي",
+        "privateCar": "سيارة خاصة",
+        "truck": "شاحنة",
+        "dyna": "دينا (بضائع متوسطة)",
+        "bus": "حافلة",
+        "minibus": "حافلة صغيرة"
+    },
     "countries": {
         "AD": "أندورا",
         "AE": "الإمارات العربية المتحدة",

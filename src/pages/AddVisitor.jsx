@@ -16,14 +16,29 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import TextField from "@mui/material/TextField";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 import { Box } from "@mui/material";
-
-const storage = getStorage();
+import { getAuth, signOut } from "firebase/auth";
+import SaudiPlateInput from "../components/SaudiPlateInput";
+import { Stack, Typography, FormControl, FormLabel } from "@mui/material";
+import VehicleTypeDropdown from "../components/VehicleTypeDropdown";
+import "react-phone-input-2/lib/style.css";
+import "react-phone-input-2/lang/ar.json"; // Language file
+import PhoneInput from "react-phone-input-2";
+import ar from "react-phone-input-2/lang/ar.json";
+import { arSA, enUS } from "date-fns/locale";
+import GetVisitorData from "../components/GetVisitorData";
 
 const VisitorForm = () => {
-  const { i18n } = useTranslation();
+  const storage = getStorage();
+  const { i18n, t } = useTranslation();
   const isArabic = i18n.language === "ar" || i18n.language === "ar-SA";
-  const [error, setError] = useState("");
+  const [error, setError] = useState({});
   const [value, setValue] = React.useState(null);
+  const [plateValue, setPlateValue] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [currentTab, setCurrentTab] = useState("passport");
+
   const [visitor, setVisitor] = useState({
     name: "",
     email: "",
@@ -51,6 +66,12 @@ const VisitorForm = () => {
       file: null,
       previewURL: null,
     },
+    gccId: {
+      documentNumber: "",
+      expiryDate: "",
+      file: null,
+      previewURL: null,
+    },
   });
 
   const [cropModal, setCropModal] = useState({
@@ -59,33 +80,38 @@ const VisitorForm = () => {
     imageSrc: null,
   });
 
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [currentTab, setCurrentTab] = useState("passport");
-
-  // Handle visitor field change
   const handleVisitorChange = (e) => {
     const { name, value } = e.target;
 
-    const isArabic = i18n.language === "ar";
+    const fieldsToValidate = ["name", "nationality", "visitReason"];
 
+    const isArabic = i18n.language === "ar";
     const arabicRegex = /^[\u0600-\u06FF\s]*$/;
     const englishRegex = /^[A-Za-z\s]*$/;
 
-    const isValid = isArabic
-      ? arabicRegex.test(value)
-      : englishRegex.test(value);
+    if (fieldsToValidate.includes(name)) {
+      const isValid = isArabic
+        ? arabicRegex.test(value)
+        : englishRegex.test(value);
 
-    if (!isValid) {
-      setError(
-        isArabic
-          ? "يرجى كتابة الأحرف العربية فقط" // Arabic only
-          : "Please use English letters only" // English only
-      );
-      return; // ⛔ Block update
+      if (!isValid) {
+        setError((prev) => ({
+          ...prev,
+          [name]: isArabic
+            ? "يرجى كتابة الأحرف العربية فقط"
+            : "Please use English letters only",
+        }));
+        return;
+      }
     }
 
-    setError(""); // ✅ Clear error if valid
+    // Clear error for the current field
+    setError((prev) => ({
+      ...prev,
+      [name]: "", // clear only this field's error
+    }));
+
+    // Update the visitor field
     setVisitor((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -136,6 +162,9 @@ const VisitorForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("currentloggied in user");
+    console.log(getAuth().currentUser);
+
     const submitter = e.nativeEvent?.submitter;
     if (!submitter || submitter.type !== "submit") {
       console.warn("Blocked unintended form submission from:", submitter);
@@ -149,7 +178,7 @@ const VisitorForm = () => {
     setLoading(true);
     setMessage("");
 
-    const { passport, iqama, nationalId } = documents;
+    const { passport, iqama, nationalId, gccId } = documents;
     try {
       const visitorsRef = collection(db, "visitors");
 
@@ -184,6 +213,7 @@ const VisitorForm = () => {
         "passport"
       );
       const iqamaURL = await uploadFileAndGetURL(iqama.fileBlob, "iqama");
+      const gccIdURL = await uploadFileAndGetURL(gccId.fileBlob, "iqama");
       const nationalIdURL = await uploadFileAndGetURL(
         nationalId.fileBlob,
         "nationalId"
@@ -191,6 +221,8 @@ const VisitorForm = () => {
 
       const payload = {
         ...visitor,
+        VehicleType: vehicleType,
+        VehiclePlate: plateValue,
         documents: {
           passport: {
             documentNumber: passport.documentNumber,
@@ -206,6 +238,11 @@ const VisitorForm = () => {
             documentNumber: nationalId.documentNumber,
             expiryDate: nationalId.expiryDate,
             fileURL: nationalIdURL,
+          },
+          gccId: {
+            documentNumber: gccId.documentNumber,
+            expiryDate: gccId.expiryDate,
+            fileURL: gccIdURL,
           },
         },
         createdAt: new Date(),
@@ -241,6 +278,12 @@ const VisitorForm = () => {
           file: null,
           previewURL: null,
         },
+        gccId: {
+          documentNumber: "",
+          expiryDate: "",
+          file: null,
+          previewURL: null,
+        },
       });
     } catch (error) {
       setMessage("❌ Error: " + error.message);
@@ -257,143 +300,214 @@ const VisitorForm = () => {
     setValue(newValue);
   };
 
+  const handleVehicleTypeChange = (event) => {
+    setVehicleType(event.target.value);
+  };
+
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md space-y-8">
-      <div className="flex justify-end px-6 pt-2">
-        <LanguageSwitcher />
-      </div>
-      <h2 className="text-2xl font-bold text-gray-800">Visitor Information</h2>
+    <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+      <div className="bg-white p-6 rounded-md shadow-md">
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Visitor Inputs */}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Visitor Inputs */}
-        <label
-          htmlFor="fullName"
-          className="block text-sm font-medium text-gray-700 dark:text-white mb-1"
-        >
-          {i18n.language === "ar" ? "الاسم الكامل" : "Full Name"}
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={visitor.name}
-          onChange={handleVisitorChange}
-          placeholder={i18n.language === "ar" ? "الاسم الكامل" : "Full Name"}
-          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
-          dir={i18n.language === "ar" ? "rtl" : "ltr"}
-        />
-        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <TextField
+                  id="fullName"
+                  name="name"
+                  label={i18n.language === "ar" ? "الاسم الكامل" : "Full Name"}
+                  value={visitor.name}
+                  onChange={handleVisitorChange}
+                  placeholder={
+                    i18n.language === "ar" ? "الاسم الكامل" : "Full Name"
+                  }
+                  fullWidth
+                  variant="outlined"
+                  inputProps={{ dir: i18n.language === "ar" ? "rtl" : "ltr" }}
+                  error={!!error.name}
+                  helperText={error.name}
+                />
+              </div>
 
-        <div className="w-full">
-          <TextField
-            type="email"
-            name="email" // Sets the name attribute, useful for forms
-            value={visitor.email} // Controlled component’s current value
-            onChange={handleVisitorChange} // Function called when input changes
-            placeholder="Email" // Placeholder text inside the input
-            label="Email"
-            id="outlined-basic"
-            variant="outlined"
-            fullWidth
-          />
+              <div className="w-full">
+                <TextField
+                  type="email"
+                  name="email" // Sets the name attribute, useful for forms
+                  value={visitor.email} // Controlled component’s current value
+                  onChange={handleVisitorChange} // Function called when input changes
+                  placeholder={t("email")}
+                  label={t("email")}
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                />
+              </div>
+
+              <div>
+                <TextField
+                  type="text"
+                  name="visitReason"
+                  value={visitor.visitReason}
+                  label={t("Reason For Visit")}
+                  onChange={handleVisitorChange}
+                  placeholder={t("Reason For Visit")}
+                  fullWidth
+                  variant="outlined"
+                  error={!!error.visitReason}
+                  helperText={error.visitReason}
+                />
+              </div>
+              <div>
+                <MuiTelInput
+                  defaultCountry="SA"
+                  //onlyCountries={["SA"]}
+                  value={visitor.Mobile}
+                  dir={i18n.language === "ar" ? "rtl" : "ltr"}
+                  onChange={(phone) =>
+                    setVisitor((prev) => ({ ...prev, Mobile: phone }))
+                  }
+                  placeholder={
+                    isArabic ? "أدخل رقم الجوال" : "Enter phone number"
+                  }
+                  forceCallingCode
+                  focusOnSelectCountry
+                  disableFormatting={true}
+                  fullWidth
+                  variant="outlined"
+                  InputProps={{
+                    sx: {
+                      borderRadius: 2,
+                      backgroundColor: "#fff",
+                      "& .MuiInputBase-input": {
+                        paddingY: 1.5,
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+            {/* <PhoneInput
+              country={"sa"}
+              value={visitor.Mobile}
+              onChange={(phone) =>
+                setVisitor((prev) => ({ ...prev, Mobile: phone }))
+              }
+              localization={ar} // ✅ Correct: pass object as prop
+              enableSearch
+              inputStyle={{ width: "100%" }}
+              placeholder={
+                i18n.language === "ar"
+                  ? "أدخل رقم الجوال"
+                  : "Enter phone number"
+              }
+            /> */}
+
+            <LocalizationProvider
+              dateAdapter={AdapterDateFns}
+              adapterLocale={i18n.language === "ar" ? arSA : enUS}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                {/* Date Picker */}
+                <DatePicker
+                  label={t("Date Of Birth")}
+                  value={value}
+                  onChange={handleChange}
+                  format="dd/MM/yyyy"
+                  renderInput={(params) => (
+                    <TextField {...params} fullWidth variant="outlined" />
+                  )}
+                />
+
+                {/* Country Select */}
+                <CountrySelect
+                  value={visitor.nationality}
+                  onChange={(selectedCountry) => {
+                    console.log("Selected Country from form:", selectedCountry);
+                    setVisitor((prev) => ({
+                      ...prev,
+                      nationality: selectedCountry,
+                    }));
+                  }}
+                />
+              </div>
+            </LocalizationProvider>
+
+            <div className="w-full">
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                  gap: 2, // equals 16px spacing
+                  mb: 2,
+                  width: "100%",
+                  alignItems: "flex-end", // vertical alignment for form labels/inputs
+                }}
+              >
+                {/* Saudi Plate input */}
+                <FormControl fullWidth>
+                  <FormLabel>{t("Vehicle Plate number")}</FormLabel>
+                  <SaudiPlateInput
+                    lang={i18n.language}
+                    onChange={setPlateValue}
+                  />
+                </FormControl>
+
+                {/* Vehicle type dropdown */}
+                <FormControl fullWidth>
+                  <FormLabel>{t("Vehicle Type")}</FormLabel>
+                  <VehicleTypeDropdown
+                    value={vehicleType}
+                    onChange={handleVehicleTypeChange}
+                  />
+                </FormControl>
+              </Box>
+            </div>
+
+            <AddvisitorTab
+              documents={documents}
+              onDocumentChange={handleDocumentChange}
+              handleFileChange={handleFileChange}
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+            />
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white font-semibold py-2 rounded-md hover:bg-indigo-700 transition"
+            >
+              {loading ? "Submitting..." : "Submit"}
+            </button>
+            {/* Status Message */}
+            {message && (
+              <p
+                className={`text-center font-medium ${
+                  message.includes("success")
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {message}
+              </p>
+            )}
+          </form>
         </div>
 
-        <input
-          type="text"
-          name="visitReason"
-          value={visitor.visitReason}
-          onChange={handleVisitorChange}
-          placeholder="Reason for Visit"
-          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
-        />
-        <div>
-          <MuiTelInput
-            defaultCountry="SA"
-            //onlyCountries={["SA"]}
-            value={visitor.Mobile}
-            dir={i18n.language === "ar" ? "rtl" : "ltr"}
-            onChange={(phone) =>
-              setVisitor((prev) => ({ ...prev, Mobile: phone }))
-            }
-            placeholder={isArabic ? "أدخل رقم الجوال" : "Enter phone number"}
-            forceCallingCode
-            focusOnSelectCountry
-            disableFormatting={true}
-            fullWidth
-            variant="outlined"
-            InputProps={{
-              sx: {
-                borderRadius: 2,
-                backgroundColor: "#fff",
-                "& .MuiInputBase-input": {
-                  paddingY: 1.5,
-                },
-              },
-            }}
+        {/* Cropper Modal */}
+        {cropModal.open && (
+          <ImageCropper
+            imageSrc={cropModal.imageSrc}
+            onCancel={onCropCancel}
+            onComplete={onCropComplete}
           />
-        </div>
-
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-            {/* Date Picker */}
-            <DatePicker
-              label="Date of Birth"
-              value={value}
-              onChange={handleChange}
-              format="dd/MM/yyyy"
-              renderInput={(params) => (
-                <TextField {...params} fullWidth variant="outlined" />
-              )}
-            />
-
-            {/* Country Select */}
-            <CountrySelect
-              value={visitor.nationality}
-              onChange={(selectedCountry) => {
-                console.log("Selected Country from form:", selectedCountry);
-                setVisitor((prev) => ({
-                  ...prev,
-                  nationality: selectedCountry,
-                }));
-              }}
-            />
-          </div>
-        </LocalizationProvider>
-
-        <AddvisitorTab
-          documents={documents}
-          onDocumentChange={handleDocumentChange}
-          handleFileChange={handleFileChange}
-          currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
-        />
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-indigo-600 text-white font-semibold py-2 rounded-md hover:bg-indigo-700 transition"
-        >
-          {loading ? "Submitting..." : "Submit"}
-        </button>
-        {/* Status Message */}
-        {message && (
-          <p
-            className={`text-center font-medium ${
-              message.includes("success") ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {message}
-          </p>
         )}
-      </form>
+      </div>
 
-      {/* Cropper Modal */}
-      {cropModal.open && (
-        <ImageCropper
-          imageSrc={cropModal.imageSrc}
-          onCancel={onCropCancel}
-          onComplete={onCropComplete}
-        />
-      )}
+      <div className="bg-white p-6 rounded-md shadow-md h-full">
+        <div className="text-lg font-semibold">Dummy Data</div>
+        <GetVisitorData />
+      </div>
     </div>
   );
 };

@@ -1,23 +1,17 @@
 body {
-  font-family: 'Noto Kufi Arabic', sans-serif;
-}
-
-body[dir="rtl"] {
-  text-align: right;
-}
-
-body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  direction: ltr;
+  text-align: left;
 }
 
-
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* When language is Arabic (RTL) */
+body[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Noto Kufi Arabic', sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto';
 }

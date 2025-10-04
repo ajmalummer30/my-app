@@ -6,9 +6,8 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Avatar,
 } from "@mui/material";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+// import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"; // Uncomment if you want the arrow icon
 
 const languages = [
   {
@@ -45,15 +44,17 @@ function LanguageSwitcher() {
     handleClose();
   };
 
+  // Removed useEffect for setting lang/dir here because it is handled globally in i18n.js
+
   return (
     <>
       <Button
         color="inherit"
         onClick={handleClick}
-        // endIcon={<KeyboardArrowDownIcon sx={{ fontSize: 18 }} />} // smaller arrow
+        // endIcon={<KeyboardArrowDownIcon sx={{ fontSize: 18 }} />} // smaller arrow, uncomment if needed
         startIcon={
           <span style={{ fontSize: "1.2rem" }}>{currentLang.flag}</span>
-        } // smaller flag
+        }
         sx={{
           textTransform: "none",
           bgcolor: "background.black",

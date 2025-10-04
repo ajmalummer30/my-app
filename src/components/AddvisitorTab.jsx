@@ -1,5 +1,4 @@
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
-import React, { useState } from "react";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -16,6 +15,7 @@ export default function AddvisitorTab({
     { name: "Passport", key: "passport" },
     { name: "Iqama", key: "iqama" },
     { name: "National ID", key: "nationalId" },
+    { name: "GCC ID", key: "gccId" },
   ];
 
   /* const [currentTab, setCurrentTab] = useState("iqama");*/
@@ -63,16 +63,18 @@ export default function AddvisitorTab({
                 "group relative min-w-0 flex-1 overflow-hidden px-4 py-4 text-center text-sm font-medium hover:bg-gray-50 focus:z-10 dark:hover:bg-white/5"
               )}
             >
-              <span>{tab.name}</span>
-              <span
-                aria-hidden="true"
-                className={classNames(
-                  currentTab === tab.key
-                    ? "bg-indigo-500 dark:bg-indigo-400"
-                    : "bg-transparent",
-                  "absolute inset-x-0 bottom-0 h-0.5"
-                )}
-              />
+              <div>
+                <span>{tab.name}</span>
+                <span
+                  aria-hidden="true"
+                  className={classNames(
+                    currentTab === tab.key
+                      ? "bg-indigo-500 dark:bg-indigo-400"
+                      : "bg-transparent",
+                    "absolute inset-x-0 bottom-0 h-0.5"
+                  )}
+                />
+              </div>
             </button>
           ))}
         </nav>
@@ -82,7 +84,7 @@ export default function AddvisitorTab({
       {/* Fields for current tab */}
       <div className="space-y-4">
         {/* Document Type Heading */}
-        <h3 className="text-xl font-semibold capitalize text-gray-800">
+        <h3 className="text-xl font-semibold capitalize text-gray-800 py-2">
           {currentTab.replace(/([A-Z])/g, " $1")}
         </h3>
 
@@ -96,11 +98,19 @@ export default function AddvisitorTab({
         />
 
         {/* Expiry Date Input */}
+        <label
+          htmlFor="expiryDate"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          {currentTab.replace(/([A-Z])/g, " $1")} Expiry Date
+        </label>
         <input
+          id="expiryDate"
           name="expiryDate"
           type="date"
           value={doc.expiryDate}
           onChange={(e) => onDocumentChange(e, currentTab)}
+          placeholder="Document Expiry Date" // Optional placeholder, but typically for date fields, this might not show.
           className="w-full px-4 py-2 border rounded"
         />
       </div>

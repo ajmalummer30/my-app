@@ -6,14 +6,18 @@ import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "jotai";
 import AuthInitializer from "./components/AuthInitializer";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+const theme = createTheme(); // you can customize this
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <Provider>
     <BrowserRouter>
-      <AuthInitializer>
-        <App />
-      </AuthInitializer>
+      <ThemeProvider theme={theme}>
+        <AuthInitializer>
+          <App />
+        </AuthInitializer>
+      </ThemeProvider>
     </BrowserRouter>
   </Provider>
 );

@@ -1,4 +1,13 @@
 {
     "sign_in_account": "Sign in to your account",
-    "home": "Home"
+    "home": "Home",
+    "vehicleType": {
+        "selectPlaceholder": "Select a vehicle type",
+        "taxi": "Taxi",
+        "privateCar": "Private Car",
+        "truck": "Truck",
+        "dyna": "Dyna",
+        "bus": "Bus",
+        "minibus": "Minibus"
+    }
 }

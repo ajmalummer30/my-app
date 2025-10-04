@@ -18,17 +18,19 @@ import PhoneAuth from "./Helperfunctions/PhoneAuth";
 import "./components/i18n";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
+import VisitorSelfRegistration from "./pages/VisitorSelfRegistration";
+import TestPage from "./pages/testpage";
 
 const App = () => {
   const { i18n } = useTranslation();
 
   // Update the direction based on language
-  useEffect(() => {
+  /*  useEffect(() => {
     const lang = i18n.language || "en";
     const dir = lang === "ar" ? "rtl" : "ltr";
     document.documentElement.lang = lang;
     document.documentElement.dir = dir;
-  }, [i18n.language]);
+  }, [i18n.language]); */
   return (
     <>
       <Routes>
@@ -36,13 +38,15 @@ const App = () => {
         {/* Login route */}
         <Route path="/login" element={<Login />} />
         <Route path="/phonelogin" element={<PhoneAuth />} />
-        <Route path="/addvisitor" element={<AddVisitorForm />} />
+        <Route path="/tespage" element={<TestPage />} />
+        <Route path="/selfregister" element={<VisitorSelfRegistration />} />
 
         {/* Protected Routes */}
         <Route element={<RequireAuth />}>
           <Route path="/app" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
+            <Route path="addvisitor" element={<AddVisitorForm />} />
             <Route path="contact" element={<Contact />} />
             <Route path="userprofile" element={<UserProfile />} />
             <Route path="editprofile" element={<EditProfile />} />
