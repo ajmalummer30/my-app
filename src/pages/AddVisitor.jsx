@@ -88,6 +88,18 @@ const VisitorForm = () => {
     const isArabic = i18n.language === "ar";
     const arabicRegex = /^[\u0600-\u06FF\s]*$/;
     const englishRegex = /^[A-Za-z\s]*$/;
+    const emailRegex = /^[a-zA-Z0-9@._\-+]*$/;
+    // Handle email separately
+    if (name === "email") {
+      const isValidEmailChars = emailRegex.test(value);
+      if (!isValidEmailChars) {
+        setError((prev) => ({
+          ...prev,
+          [name]: t("Only English alphanumeric and email characters allowed"),
+        }));
+        return;
+      }
+    }
 
     if (fieldsToValidate.includes(name)) {
       const isValid = isArabic
@@ -112,6 +124,7 @@ const VisitorForm = () => {
     }));
 
     // Update the visitor field
+    setError((prev) => ({ ...prev, [name]: "" }));
     setVisitor((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -307,7 +320,7 @@ const VisitorForm = () => {
   return (
     <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
       <div className="bg-white p-6 rounded-md shadow-md">
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Visitor Inputs */}
 
@@ -341,6 +354,8 @@ const VisitorForm = () => {
                   id="outlined-basic"
                   variant="outlined"
                   fullWidth
+                  error={!!error.email}
+                  helperText={error.email}
                 />
               </div>
 
@@ -451,6 +466,7 @@ const VisitorForm = () => {
                     lang={i18n.language}
                     onChange={setPlateValue}
                   />
+                  {plateValue}
                 </FormControl>
 
                 {/* Vehicle type dropdown */}

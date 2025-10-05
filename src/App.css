@@ -39,3 +39,11 @@
 input[type="file"] {
   display: none;
 }
+
+@media (min-width: 1608px) {
+  .custom-grid-2-cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem; /* equal to Tailwind's gap-6 */
+  }
+}

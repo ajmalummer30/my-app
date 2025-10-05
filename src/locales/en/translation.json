@@ -1,6 +1,15 @@
 {
     "sign_in_account": "Sign in to your account",
     "home": "Home",
+    "passport": "Passport",
+    "iqama": "Iqama",
+    "nationalId": "National ID",
+    "gccId": "GCC ID",
+    "documentNumber": "Document Number",
+    "Expiry Date": "{{doc}} Expiry Date",
+    "uploadFile": "Upload {{doc}} file",
+    "browse": "Browse...",
+    "selectTab": "Select a tab",
     "vehicleType": {
         "selectPlaceholder": "Select a vehicle type",
         "taxi": "Taxi",

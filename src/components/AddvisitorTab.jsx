@@ -1,4 +1,7 @@
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
+import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import TextField from "@mui/material/TextField";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -11,11 +14,15 @@ export default function AddvisitorTab({
   currentTab,
   setCurrentTab,
 }) {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar" || i18n.language === "ar-SA";
+  const [inputError, setInputError] = useState("");
+
   const tabs = [
-    { name: "Passport", key: "passport" },
-    { name: "Iqama", key: "iqama" },
-    { name: "National ID", key: "nationalId" },
-    { name: "GCC ID", key: "gccId" },
+    { name: t("passport"), key: "passport" },
+    { name: t("iqama"), key: "iqama" },
+    { name: t("nationalId"), key: "nationalId" },
+    { name: t("gccId"), key: "gccId" },
   ];
 
   /* const [currentTab, setCurrentTab] = useState("iqama");*/
@@ -28,7 +35,7 @@ export default function AddvisitorTab({
         <select
           value={currentTab}
           onChange={(e) => setCurrentTab(e.target.value)}
-          aria-label="Select a tab"
+          aria-label={t("Select a tab")}
           className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-2 pr-8 pl-3 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 dark:bg-white/5 dark:text-gray-100 dark:outline-white/10 dark:*:bg-gray-800 dark:focus:outline-indigo-500"
         >
           {tabs.map((tab) => (
@@ -85,16 +92,35 @@ export default function AddvisitorTab({
       <div className="space-y-4">
         {/* Document Type Heading */}
         <h3 className="text-xl font-semibold capitalize text-gray-800 py-2">
-          {currentTab.replace(/([A-Z])/g, " $1")}
+          {t(currentTab)}
         </h3>
 
         {/* Document Number Input */}
-        <input
+        <TextField
           name="documentNumber"
           value={doc.documentNumber}
-          onChange={(e) => onDocumentChange(e, currentTab)}
-          placeholder="Document Number"
-          className="w-full px-4 py-2 border rounded"
+          onChange={(e) => {
+            const value = e.target.value;
+            const isValid = /^[a-zA-Z0-9]*$/.test(value);
+
+            // Set or clear error
+            if (!isValid) {
+              setInputError(t("Only English alphanumeric characters allowed"));
+              return; // stop here, don't update state or input
+            }
+            // If valid, clear error and update state
+            setInputError("");
+            onDocumentChange(e, currentTab);
+          }}
+          placeholder={t("Document Number")}
+          label={t("Document Number")}
+          error={!!inputError}
+          helperText={inputError}
+          fullWidth
+          variant="outlined"
+          inputProps={{
+            dir: isRTL ? "rtl" : "ltr",
+          }}
         />
 
         {/* Expiry Date Input */}
@@ -102,7 +128,7 @@ export default function AddvisitorTab({
           htmlFor="expiryDate"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          {currentTab.replace(/([A-Z])/g, " $1")} Expiry Date
+          {t("Expiry Date", { doc: t(currentTab) })}
         </label>
         <input
           id="expiryDate"
@@ -118,7 +144,7 @@ export default function AddvisitorTab({
       {/* File Upload Section */}
       <div className="mt-2">
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Upload {currentTab.replace(/([A-Z])/g, " $1")} file
+          {t("uploadFile", { doc: t(currentTab) })}
         </label>
 
         <div className="relative w-full">
@@ -139,7 +165,7 @@ export default function AddvisitorTab({
               document.getElementById(`file-upload-${currentTab}`).click()
             }
           >
-            Browse...
+            {t("browse")}
           </button>
         </div>
 
