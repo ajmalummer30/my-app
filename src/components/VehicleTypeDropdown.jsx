@@ -52,10 +52,14 @@ export default function VehicleTypeSelect({ value, onChange }) {
       onChange={onChange}
       displayEmpty
       fullWidth
-      sx={{ minWidth: 180, height: 48, fontWeight: "bold" }}
+      sx={{ minWidth: 180, height: "auto", fontWeight: "bold" }}
       renderValue={(selected) => {
         if (!selected) {
-          return <em>{t("vehicleType.selectPlaceholder")}</em>;
+          return (
+            <em style={{ fontStyle: "normal", fontWeight: "normal" }}>
+              {t("vehicleType.selectPlaceholder")}
+            </em>
+          );
         }
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

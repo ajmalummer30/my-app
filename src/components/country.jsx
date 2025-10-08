@@ -60,7 +60,11 @@ export default function CountrySelect({ value, onChange }) {
       renderInput={(params) => (
         <TextField
           {...params}
-          label={t("Nationality")}
+          label={
+            <span>
+              {t("Nationality")} <span style={{ color: "red" }}>*</span>
+            </span>
+          }
           inputProps={{
             ...params.inputProps,
             autoComplete: "new-password",

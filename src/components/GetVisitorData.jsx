@@ -40,7 +40,7 @@ const visitors = [
 export default function VisitorsIDCards() {
   return (
     <div className="w-full flex justify-center">
-      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-5xl px-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2 gap-6 w-auto max-w-5xl px-4">
         {visitors.map((visitor) => (
           <div
             key={visitor.id}
@@ -56,7 +56,7 @@ export default function VisitorsIDCards() {
             </div>
 
             {/* Visitor Info */}
-            <div className="text-sm text-gray-700 w-full">
+            <div className="text-sm text-gray-700 ">
               <h2 className="text-lg font-semibold text-gray-900">
                 {visitor.name}
               </h2>
@@ -77,6 +77,14 @@ export default function VisitorsIDCards() {
               <p>
                 <span className="font-semibold">DOB:</span>{" "}
                 {new Date(visitor.dateOfBirth).toLocaleDateString()}
+              </p>
+              <p>
+                <input
+                  type="button"
+                  value="Check In"
+                  title="Click me"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:shadow-lg transition duration-200 cursor-pointer"
+                />
               </p>
             </div>
           </div>

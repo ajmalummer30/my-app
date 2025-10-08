@@ -18,7 +18,8 @@ import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 import { Box } from "@mui/material";
 import { getAuth, signOut } from "firebase/auth";
 import SaudiPlateInput from "../components/SaudiPlateInput";
-import { Stack, Typography, FormControl, FormLabel } from "@mui/material";
+import { Stack, Typography, FormControl, InputLabel } from "@mui/material";
+import { FormHelperText } from "@mui/material";
 import VehicleTypeDropdown from "../components/VehicleTypeDropdown";
 import "react-phone-input-2/lib/style.css";
 import "react-phone-input-2/lang/ar.json"; // Language file
@@ -89,7 +90,33 @@ const VisitorForm = () => {
     const arabicRegex = /^[\u0600-\u06FF\s]*$/;
     const englishRegex = /^[A-Za-z\s]*$/;
     const emailRegex = /^[a-zA-Z0-9@._\-+]*$/;
-    // Handle email separately
+    const engPlateRegex = /^[A-Za-z0-9 ]*$/;
+    if (name === "Vehicle_Number") {
+      if (i18n.language.startsWith("ar")) {
+        if (/^[\u0600-\u06FF0-9 ]*$/.test(value)) {
+          setPlateValue(value);
+          setVisitor((prev) => ({ ...prev, [name]: value }));
+          setError((prev) => ({ ...prev, [name]: "" }));
+        } else {
+          setError((prev) => ({
+            ...prev,
+            [name]: "يرجى استخدام الأحرف العربية والأرقام الإنجليزية فقط",
+          }));
+        }
+      } else {
+        if (/^[A-Za-z0-9 ]*$/.test(value)) {
+          setPlateValue(value);
+          setVisitor((prev) => ({ ...prev, [name]: value }));
+          setError((prev) => ({ ...prev, [name]: "" }));
+        } else {
+          setError((prev) => ({
+            ...prev,
+            [name]: "Please use English letters and numbers only",
+          }));
+        }
+      }
+      return; // exit early
+    }
     if (name === "email") {
       const isValidEmailChars = emailRegex.test(value);
       if (!isValidEmailChars) {
@@ -116,12 +143,6 @@ const VisitorForm = () => {
         return;
       }
     }
-
-    // Clear error for the current field
-    setError((prev) => ({
-      ...prev,
-      [name]: "", // clear only this field's error
-    }));
 
     // Update the visitor field
     setError((prev) => ({ ...prev, [name]: "" }));
@@ -178,15 +199,49 @@ const VisitorForm = () => {
     console.log("currentloggied in user");
     console.log(getAuth().currentUser);
 
-    const submitter = e.nativeEvent?.submitter;
-    if (!submitter || submitter.type !== "submit") {
-      console.warn("Blocked unintended form submission from:", submitter);
-      return;
+    // handleSubmit(e);
+    let newErrors = {};
+
+    // Check visitor fields
+
+    if (!visitor.name) newErrors.name = t("This field is required");
+    if (!visitor.email) newErrors.email = t("This field is required");
+    if (!visitor.visitReason)
+      newErrors.visitReason = t("This field is required");
+    if (!value) {
+      newErrors.dateOfBirth = t("This field is required");
+    }
+    if (!visitor.nationality)
+      newErrors.nationality = t("This field is required");
+    if (!visitor.Mobile) {
+      newErrors.Mobile = t("This field is required");
+    } else {
+      // Saudi mobile validation
+      let mobile = visitor.Mobile;
+      if (mobile.startsWith("+966")) {
+        mobile = mobile.slice(4); // remove country code
+      }
+      const ksaMobileRegex = /^5[0-9]{8}$/;
+      if (!ksaMobileRegex.test(mobile)) {
+        newErrors.Mobile = t("Invalid Saudi mobile number");
+      }
     }
 
-    console.log("Form submitted by:", e.nativeEvent.submitter);
+    // Vehicle fields
+    if (!vehicleType) newErrors.VehicleType = t("This field is required");
 
-    // handleSubmit(e);
+    // Document fields
+    const doc = documents[currentTab];
+    if (!doc.documentNumber)
+      newErrors.documentNumber = t("This field is required");
+    if (!doc.expiryDate) newErrors.expiryDate = t("This field is required");
+
+    if (Object.keys(newErrors).length > 0) {
+      setError(newErrors);
+      console.log("Erros", error);
+      setLoading(false);
+      return; // stop submission if errors
+    }
 
     setLoading(true);
     setMessage("");
@@ -262,6 +317,7 @@ const VisitorForm = () => {
       };
 
       await addDoc(visitorsRef, payload);
+      console.log("All required fields are filled!", visitor, documents);
       setMessage("✅ Visitor and documents submitted successfully!");
 
       // Reset
@@ -303,6 +359,7 @@ const VisitorForm = () => {
     }
 
     setLoading(false);
+    setError({});
   };
 
   const onCropCancel = () => {
@@ -311,6 +368,7 @@ const VisitorForm = () => {
 
   const handleChange = (newValue) => {
     setValue(newValue);
+    setError((prev) => ({ ...prev, dateOfBirth: "" })); // clear DOB error on change
   };
 
   const handleVehicleTypeChange = (event) => {
@@ -318,7 +376,7 @@ const VisitorForm = () => {
   };
 
   return (
-    <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+    <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-4 px-4">
       <div className="bg-white p-6 rounded-md shadow-md">
         <div className="flex-1 auto">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -329,7 +387,16 @@ const VisitorForm = () => {
                 <TextField
                   id="fullName"
                   name="name"
-                  label={i18n.language === "ar" ? "الاسم الكامل" : "Full Name"}
+                  label={
+                    <span
+                      style={{
+                        direction: i18n.language === "ar" ? "rtl" : "ltr",
+                      }}
+                    >
+                      {i18n.language === "ar" ? "الاسم الكامل" : "Full Name"}{" "}
+                      <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
                   value={visitor.name}
                   onChange={handleVisitorChange}
                   placeholder={
@@ -350,7 +417,15 @@ const VisitorForm = () => {
                   value={visitor.email} // Controlled component’s current value
                   onChange={handleVisitorChange} // Function called when input changes
                   placeholder={t("email")}
-                  label={t("email")}
+                  label={
+                    <span
+                      style={{
+                        direction: i18n.language === "ar" ? "rtl" : "ltr",
+                      }}
+                    >
+                      {t("email")} <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
                   id="outlined-basic"
                   variant="outlined"
                   fullWidth
@@ -364,7 +439,16 @@ const VisitorForm = () => {
                   type="text"
                   name="visitReason"
                   value={visitor.visitReason}
-                  label={t("Reason For Visit")}
+                  label={
+                    <span
+                      style={{
+                        direction: i18n.language === "ar" ? "rtl" : "ltr",
+                      }}
+                    >
+                      {t("Reason For Visit")}{" "}
+                      <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
                   onChange={handleVisitorChange}
                   placeholder={t("Reason For Visit")}
                   fullWidth
@@ -374,32 +458,36 @@ const VisitorForm = () => {
                 />
               </div>
               <div>
-                <MuiTelInput
-                  defaultCountry="SA"
-                  //onlyCountries={["SA"]}
-                  value={visitor.Mobile}
-                  dir={i18n.language === "ar" ? "rtl" : "ltr"}
-                  onChange={(phone) =>
-                    setVisitor((prev) => ({ ...prev, Mobile: phone }))
-                  }
-                  placeholder={
-                    isArabic ? "أدخل رقم الجوال" : "Enter phone number"
-                  }
-                  forceCallingCode
-                  focusOnSelectCountry
-                  disableFormatting={true}
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{
-                    sx: {
-                      borderRadius: 2,
-                      backgroundColor: "#fff",
-                      "& .MuiInputBase-input": {
-                        paddingY: 1.5,
+                <FormControl fullWidth error={!!error.Mobile}>
+                  <MuiTelInput
+                    defaultCountry="SA"
+                    value={visitor.Mobile}
+                    dir={i18n.language === "ar" ? "rtl" : "ltr"}
+                    onChange={(phone) =>
+                      setVisitor((prev) => ({ ...prev, Mobile: phone }))
+                    }
+                    placeholder={
+                      isArabic ? "أدخل رقم الجوال" : "Enter phone number *"
+                    }
+                    forceCallingCode
+                    focusOnSelectCountry
+                    disableFormatting={true}
+                    fullWidth
+                    variant="outlined"
+                    InputProps={{
+                      sx: {
+                        borderRadius: 2,
+                        backgroundColor: "#fff",
+                        "& .MuiInputBase-input": {
+                          paddingY: 1.5,
+                        },
                       },
-                    },
-                  }}
-                />
+                    }}
+                  />
+                  {error.Mobile && (
+                    <FormHelperText>{error.Mobile}</FormHelperText>
+                  )}
+                </FormControl>
               </div>
             </div>
             {/* <PhoneInput
@@ -425,26 +513,42 @@ const VisitorForm = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 {/* Date Picker */}
                 <DatePicker
-                  label={t("Date Of Birth")}
+                  label={
+                    <span>
+                      {t("Date Of Birth")}{" "}
+                      <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
                   value={value}
                   onChange={handleChange}
                   format="dd/MM/yyyy"
-                  renderInput={(params) => (
-                    <TextField {...params} fullWidth variant="outlined" />
-                  )}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      variant: "outlined",
+                      error: !!error.dateOfBirth,
+                      helperText: error.dateOfBirth,
+                    },
+                  }}
                 />
 
                 {/* Country Select */}
-                <CountrySelect
-                  value={visitor.nationality}
-                  onChange={(selectedCountry) => {
-                    console.log("Selected Country from form:", selectedCountry);
-                    setVisitor((prev) => ({
-                      ...prev,
-                      nationality: selectedCountry,
-                    }));
-                  }}
-                />
+                <FormControl fullWidth error={!!error.nationality}>
+                  <CountrySelect
+                    value={visitor.nationality}
+                    onChange={(selectedCountry) => {
+                      setVisitor((prev) => ({
+                        ...prev,
+                        nationality: selectedCountry,
+                      }));
+                      setError((prev) => ({ ...prev, nationality: "" })); // clear error on change
+                    }}
+                  />
+
+                  {error.nationality && (
+                    <FormHelperText>{error.nationality}</FormHelperText>
+                  )}
+                </FormControl>
               </div>
             </LocalizationProvider>
 
@@ -460,22 +564,52 @@ const VisitorForm = () => {
                 }}
               >
                 {/* Saudi Plate input */}
-                <FormControl fullWidth>
+                <TextField
+                  label={
+                    <span>
+                      {t("Vehicle Number")}{" "}
+                      <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                  name="Vehicle_Number"
+                  value={plateValue}
+                  onChange={handleVisitorChange}
+                  variant="outlined"
+                  error={!!error.Vehicle_Number}
+                  helperText={error.Vehicle_Number}
+                  placeholder={isArabic ? "د و ك ١٢٣٤ " : "DUK1234"}
+                  fullWidth
+                  inputProps={{
+                    style: {
+                      direction: /^[\u0600-\u06FF]/.test(plateValue)
+                        ? "rtl"
+                        : "ltr",
+                      textAlign: /^[\u0600-\u06FF]/.test(plateValue)
+                        ? "right"
+                        : "left",
+                    },
+                    maxLength: 10, // adjust as needed
+                  }}
+                />
+
+                {/*  <FormControl fullWidth>
                   <FormLabel>{t("Vehicle Plate number")}</FormLabel>
                   <SaudiPlateInput
                     lang={i18n.language}
                     onChange={setPlateValue}
                   />
                   {plateValue}
-                </FormControl>
+                </FormControl> */}
 
                 {/* Vehicle type dropdown */}
-                <FormControl fullWidth>
-                  <FormLabel>{t("Vehicle Type")}</FormLabel>
+                <FormControl fullWidth error={!!error.VehicleType}>
                   <VehicleTypeDropdown
                     value={vehicleType}
                     onChange={handleVehicleTypeChange}
                   />
+                  {error.VehicleType && (
+                    <FormHelperText>{error.VehicleType}</FormHelperText>
+                  )}
                 </FormControl>
               </Box>
             </div>
@@ -520,7 +654,7 @@ const VisitorForm = () => {
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-md shadow-md h-full">
+      <div className="bg-white p-6 rounded-md shadow-md xl:w-auto w-auto h-full">
         <div className="text-lg font-semibold">Dummy Data</div>
         <GetVisitorData />
       </div>

@@ -15,6 +15,8 @@
     "Expiry Date": "تاريخ انتهاء {{doc}}",
     "uploadFile": "تحميل ملف {{doc}}",
     "browse": "تصفح...",
+    "Vehicle Number": "رقم المركبة",
+    "DUK1234": "د و ك ١٢٣٤",
     "Only English alphanumeric characters allowed": "يُسمح فقط بالأحرف والأرقام الإنجليزية",
     "selectTab": "اختر نوع الوثيقة",
     "Only English alphanumeric and email characters allowed": "مسموح فقط بالحروف الإنجليزية والأرقام والرموز الخاصة بالبريد الإلكتروني",

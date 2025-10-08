@@ -2,6 +2,14 @@ import { ChevronDownIcon } from "@heroicons/react/16/solid";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import TextField from "@mui/material/TextField";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { arSD, enUS } from "dayjs/locale";
+import dayjs from "dayjs";
+import "dayjs/locale/ar"; // import Arabic locale
+import FileUploadSection from "./Fileupload";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+dayjs.extend(localizedFormat);
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -17,6 +25,7 @@ export default function AddvisitorTab({
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar" || i18n.language === "ar-SA";
   const [inputError, setInputError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const tabs = [
     { name: t("passport"), key: "passport" },
@@ -31,7 +40,7 @@ export default function AddvisitorTab({
   return (
     <div>
       {/* Mobile dropdown */}
-      <div className="grid grid-cols-1 sm:hidden">
+      <div className="grid grid-cols-1 sm:hidden sm:h-auto">
         <select
           value={currentTab}
           onChange={(e) => setCurrentTab(e.target.value)}
@@ -91,92 +100,94 @@ export default function AddvisitorTab({
       {/* Fields for current tab */}
       <div className="space-y-4">
         {/* Document Type Heading */}
+
         <h3 className="text-xl font-semibold capitalize text-gray-800 py-2">
           {t(currentTab)}
         </h3>
 
-        {/* Document Number Input */}
-        <TextField
-          name="documentNumber"
-          value={doc.documentNumber}
-          onChange={(e) => {
-            const value = e.target.value;
-            const isValid = /^[a-zA-Z0-9]*$/.test(value);
+        <div>
+          <TextField
+            name="documentNumber"
+            value={doc.documentNumber}
+            onChange={(e) => {
+              const value = e.target.value;
+              const isValid = /^[a-zA-Z0-9]*$/.test(value);
 
-            // Set or clear error
-            if (!isValid) {
-              setInputError(t("Only English alphanumeric characters allowed"));
-              return; // stop here, don't update state or input
+              // Set or clear error
+              if (!isValid) {
+                setInputError(
+                  t("Only English alphanumeric characters allowed")
+                );
+                return; // stop here, don't update state or input
+              }
+              // If valid, clear error and update state
+              setInputError("");
+              onDocumentChange(e, currentTab);
+            }}
+            placeholder={t("Document Number")}
+            label={
+              <span>
+                {t("Document Number")} <span className="text-red-500">*</span>
+              </span>
             }
-            // If valid, clear error and update state
-            setInputError("");
-            onDocumentChange(e, currentTab);
-          }}
-          placeholder={t("Document Number")}
-          label={t("Document Number")}
-          error={!!inputError}
-          helperText={inputError}
-          fullWidth
-          variant="outlined"
-          inputProps={{
-            dir: isRTL ? "rtl" : "ltr",
-          }}
-        />
-
-        {/* Expiry Date Input */}
-        <label
-          htmlFor="expiryDate"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          {t("Expiry Date", { doc: t(currentTab) })}
-        </label>
-        <input
-          id="expiryDate"
-          name="expiryDate"
-          type="date"
-          value={doc.expiryDate}
-          onChange={(e) => onDocumentChange(e, currentTab)}
-          placeholder="Document Expiry Date" // Optional placeholder, but typically for date fields, this might not show.
-          className="w-full px-4 py-2 border rounded"
-        />
-      </div>
-      {/* File Upload Section */}
-      {/* File Upload Section */}
-      <div className="mt-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("uploadFile", { doc: t(currentTab) })}
-        </label>
-
-        <div className="relative w-full">
-          {/* Hidden file input */}
-          <input
-            id={`file-upload-${currentTab}`}
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, currentTab)}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            error={!!inputError}
+            helperText={inputError}
+            fullWidth
+            variant="outlined"
+            inputProps={{
+              dir: isRTL ? "rtl" : "ltr",
+            }}
           />
-
-          {/* Styled "Browse" button */}
-          <button
-            type="button"
-            className="inline-block w-full text-left px-4 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            onClick={() =>
-              document.getElementById(`file-upload-${currentTab}`).click()
-            }
-          >
-            {t("browse")}
-          </button>
         </div>
 
-        {/* Preview image */}
-        {documents[currentTab].previewURL && (
-          <img
-            src={documents[currentTab].previewURL}
-            alt={`${currentTab} preview`}
-            className="mt-2 w-48 h-36 object-contain border rounded"
+        <div>
+          <LocalizationProvider
+            dateAdapter={AdapterDayjs}
+            adapterLocale={i18n.language === "ar" ? "ar" : "en"}
+          >
+            <DatePicker
+              label={
+                <span>
+                  {t("Expiry Date", { doc: t(currentTab) })}{" "}
+                  <span style={{ color: "red" }}>*</span>
+                </span>
+              }
+              value={doc.expiryDate ? dayjs(doc.expiryDate) : null}
+              format="DD/MM/YYYY"
+              onChange={(newValue) => {
+                onDocumentChange(
+                  {
+                    target: {
+                      name: "expiryDate",
+                      value: newValue?.format("YYYY-MM-DD"),
+                    },
+                  },
+                  currentTab
+                );
+              }}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  variant: "outlined",
+                  InputLabelProps: { shrink: true },
+                  inputProps: {
+                    dir: isRTL ? "rtl" : "ltr",
+                    style: { textAlign: isRTL ? "right" : "left" },
+                  },
+                },
+              }}
+            />
+          </LocalizationProvider>
+        </div>
+        <div className="mt-2">
+          <FileUploadSection
+            currentTab={currentTab}
+            handleFileChange={handleFileChange}
+            documents={documents}
+            t={t}
+            submitted={submitted}
           />
-        )}
+        </div>
       </div>
     </div>
   );
