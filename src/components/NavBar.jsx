@@ -20,7 +20,7 @@ import { userAtom } from "../store/AuthAtom"; // adjust path
 const navigation = [
   { name: "Home", href: "/app", current: true },
   { name: "About", href: "/app/About", current: false },
-  { name: "Contact", href: "/app/contact", current: false },
+  { name: "visitorreport", href: "/app/visitorreport", current: false },
   { name: "addvisitor", href: "/app/addvisitor", current: false },
   { name: "Dashboard", href: "/app/dashboard", current: false },
 ];

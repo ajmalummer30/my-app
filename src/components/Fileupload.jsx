@@ -1,5 +1,12 @@
-import { Box, Button, Typography, FormHelperText } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  FormHelperText,
+  IconButton,
+} from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 function FileUploadSection({
   currentTab,
@@ -7,6 +14,7 @@ function FileUploadSection({
   documents,
   t,
   submitted,
+  handleImageRemove,
 }) {
   const fileSelected = documents[currentTab]?.previewURL;
 
@@ -42,27 +50,53 @@ function FileUploadSection({
         />
       </Button>
 
-      {/* Show red error text after submit if no file selected */}
-      {submitted && !fileSelected && (
-        <FormHelperText error>{t("This field is required")}</FormHelperText>
-      )}
+      {/* {error?.fileUpload && (
+        <FormHelperText error>{error.fileUpload}</FormHelperText>
+      )} */}
 
       {/* Preview image */}
       {fileSelected && (
         <Box
-          component="img"
-          src={fileSelected}
-          alt={`${currentTab} preview`}
           sx={{
+            position: "relative", // <-- necessary for absolute positioning inside
+            display: "inline-block",
             mt: 2,
-            width: 192, // same as w-48
-            height: 144, // same as h-36
-            objectFit: "contain",
-            border: "1px solid #d1d5db",
-            borderRadius: 1,
-            display: "block",
           }}
-        />
+        >
+          {/* Preview image */}
+          <Box
+            component="img"
+            src={fileSelected}
+            alt={`${currentTab} preview`}
+            sx={{
+              width: 192, // w-48
+              height: 144, // h-36
+              objectFit: "contain",
+              border: "1px solid #d1d5db",
+              borderRadius: 1,
+              display: "block",
+            }}
+          />
+
+          {/* Cancel (X) Button */}
+          <IconButton
+            size="small"
+            onClick={() => handleImageRemove(currentTab)}
+            sx={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              backgroundColor: "#fff",
+              "&:hover": {
+                backgroundColor: "#f87171", // Tailwind red-400
+                color: "#fff",
+              },
+              boxShadow: 1,
+            }}
+          >
+            <CancelIcon fontSize="small" />
+          </IconButton>
+        </Box>
       )}
     </Box>
   );

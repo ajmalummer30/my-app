@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useEffect } from "react";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../components/Firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -27,18 +26,19 @@ import PhoneInput from "react-phone-input-2";
 import ar from "react-phone-input-2/lang/ar.json";
 import { arSA, enUS } from "date-fns/locale";
 import GetVisitorData from "../components/GetVisitorData";
+import CameraCapture from "../components/CameraCapture";
+import FaceCapture from "../components/FaceCapture";
 
 const VisitorForm = () => {
   const storage = getStorage();
   const { i18n, t } = useTranslation();
   const isArabic = i18n.language === "ar" || i18n.language === "ar-SA";
   const [error, setError] = useState({});
-  const [value, setValue] = React.useState(null);
-  const [plateValue, setPlateValue] = useState("");
-  const [vehicleType, setVehicleType] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [currentTab, setCurrentTab] = useState("passport");
+  const [docErrors, setDocErrors] = useState({});
+  const [capturedImage, setCapturedImage] = useState(null);
 
   const [visitor, setVisitor] = useState({
     name: "",
@@ -46,6 +46,9 @@ const VisitorForm = () => {
     visitReason: "",
     Mobile: "",
     nationality: "",
+    dateofbirth: "",
+    vehicleplatenumber: "",
+    vehicleType: "",
   });
 
   const [documents, setDocuments] = useState({
@@ -91,10 +94,9 @@ const VisitorForm = () => {
     const englishRegex = /^[A-Za-z\s]*$/;
     const emailRegex = /^[a-zA-Z0-9@._\-+]*$/;
     const engPlateRegex = /^[A-Za-z0-9 ]*$/;
-    if (name === "Vehicle_Number") {
+    if (name === "vehicleplatenumber") {
       if (i18n.language.startsWith("ar")) {
         if (/^[\u0600-\u06FF0-9 ]*$/.test(value)) {
-          setPlateValue(value);
           setVisitor((prev) => ({ ...prev, [name]: value }));
           setError((prev) => ({ ...prev, [name]: "" }));
         } else {
@@ -105,7 +107,6 @@ const VisitorForm = () => {
         }
       } else {
         if (/^[A-Za-z0-9 ]*$/.test(value)) {
-          setPlateValue(value);
           setVisitor((prev) => ({ ...prev, [name]: value }));
           setError((prev) => ({ ...prev, [name]: "" }));
         } else {
@@ -161,6 +162,18 @@ const VisitorForm = () => {
     }));
   };
 
+  const handleImageRemove = (docType) => {
+    setDocuments((prev) => ({
+      ...prev,
+      [docType]: {
+        ...prev[docType],
+        file: null,
+        fileBlob: null,
+        previewURL: null,
+      },
+    }));
+  };
+
   // When file selected:
   const handleFileChange = (e, type) => {
     const file = e.target.files[0];
@@ -196,6 +209,7 @@ const VisitorForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     console.log("currentloggied in user");
     console.log(getAuth().currentUser);
 
@@ -205,10 +219,9 @@ const VisitorForm = () => {
     // Check visitor fields
 
     if (!visitor.name) newErrors.name = t("This field is required");
-    if (!visitor.email) newErrors.email = t("This field is required");
     if (!visitor.visitReason)
       newErrors.visitReason = t("This field is required");
-    if (!value) {
+    if (!visitor.dateofbirth) {
       newErrors.dateOfBirth = t("This field is required");
     }
     if (!visitor.nationality)
@@ -227,20 +240,42 @@ const VisitorForm = () => {
       }
     }
 
-    // Vehicle fields
-    if (!vehicleType) newErrors.VehicleType = t("This field is required");
+    // Conditional vehicle validation (separate errors)
+    if (visitor.vehicleplatenumber && !visitor.vehicleType) {
+      newErrors.vehicleType = t(
+        "Vehicle type is required when number is provided"
+      );
+    }
 
-    // Document fields
-    const doc = documents[currentTab];
-    if (!doc.documentNumber)
-      newErrors.documentNumber = t("This field is required");
-    if (!doc.expiryDate) newErrors.expiryDate = t("This field is required");
+    if (visitor.vehicleType && !visitor.vehicleplatenumber) {
+      newErrors.vehicleplatenumber = t(
+        "Vehicle number is required when type is selected"
+      );
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setError(newErrors);
       console.log("Erros", error);
       setLoading(false);
       return; // stop submission if errors
+    } else {
+      console.log("ajmal");
+    }
+
+    const doc = documents[currentTab];
+    const newDocErrors = {};
+
+    if (!doc.documentNumber) {
+      newDocErrors.documentNumber = t("Document number is required");
+    }
+    if (!doc.expiryDate) {
+      newDocErrors.expiryDate = t("Expiry date is required");
+    }
+
+    if (Object.keys(newDocErrors).length > 0) {
+      setDocErrors({ [currentTab]: newDocErrors }); // scoped to current tab
+      setLoading(false);
+      return;
     }
 
     setLoading(true);
@@ -289,8 +324,7 @@ const VisitorForm = () => {
 
       const payload = {
         ...visitor,
-        VehicleType: vehicleType,
-        VehiclePlate: plateValue,
+        // VehicleType: vehicleType,
         documents: {
           passport: {
             documentNumber: passport.documentNumber,
@@ -327,6 +361,9 @@ const VisitorForm = () => {
         visitReason: "",
         Mobile: "",
         nationality: "",
+        dateofbirth: "",
+        vehicleplatenumber: "",
+        vehicleType: "",
       });
       setDocuments({
         passport: {
@@ -360,6 +397,9 @@ const VisitorForm = () => {
 
     setLoading(false);
     setError({});
+    setTimeout(() => {
+      setMessage("");
+    }, 5000);
   };
 
   const onCropCancel = () => {
@@ -367,18 +407,30 @@ const VisitorForm = () => {
   };
 
   const handleChange = (newValue) => {
-    setValue(newValue);
+    setVisitor((prev) => {
+      return { ...prev, dateofbirth: newValue };
+    });
     setError((prev) => ({ ...prev, dateOfBirth: "" })); // clear DOB error on change
   };
 
   const handleVehicleTypeChange = (event) => {
-    setVehicleType(event.target.value);
+    setVisitor((prev) => {
+      return {
+        ...prev,
+        vehicleType: event.target.value,
+      };
+    });
+    //setVisitor(event.target.value);
+  };
+
+  const handleImageCapture = (imageUrl) => {
+    setCapturedImage(imageUrl); // Save the captured image URL
   };
 
   return (
     <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-4 px-4">
       <div className="bg-white p-6 rounded-md shadow-md">
-        <div className="flex-1 auto">
+        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto w-full max-w-5xl px-4">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Visitor Inputs */}
 
@@ -423,7 +475,7 @@ const VisitorForm = () => {
                         direction: i18n.language === "ar" ? "rtl" : "ltr",
                       }}
                     >
-                      {t("email")} <span style={{ color: "red" }}>*</span>
+                      {t("email")} <span style={{ color: "red" }}></span>
                     </span>
                   }
                   id="outlined-basic"
@@ -474,6 +526,7 @@ const VisitorForm = () => {
                     disableFormatting={true}
                     fullWidth
                     variant="outlined"
+                    error={!!error.Mobile} // ✅ This line enables red border
                     InputProps={{
                       sx: {
                         borderRadius: 2,
@@ -519,7 +572,7 @@ const VisitorForm = () => {
                       <span style={{ color: "red" }}>*</span>
                     </span>
                   }
-                  value={value}
+                  value={visitor.dateofbirth}
                   onChange={handleChange}
                   format="dd/MM/yyyy"
                   slotProps={{
@@ -536,6 +589,7 @@ const VisitorForm = () => {
                 <FormControl fullWidth error={!!error.nationality}>
                   <CountrySelect
                     value={visitor.nationality}
+                    error={!!error.nationality} // <-- Pass error prop here
                     onChange={(selectedCountry) => {
                       setVisitor((prev) => ({
                         ...prev,
@@ -563,35 +617,6 @@ const VisitorForm = () => {
                   alignItems: "flex-end", // vertical alignment for form labels/inputs
                 }}
               >
-                {/* Saudi Plate input */}
-                <TextField
-                  label={
-                    <span>
-                      {t("Vehicle Number")}{" "}
-                      <span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
-                  name="Vehicle_Number"
-                  value={plateValue}
-                  onChange={handleVisitorChange}
-                  variant="outlined"
-                  error={!!error.Vehicle_Number}
-                  helperText={error.Vehicle_Number}
-                  placeholder={isArabic ? "د و ك ١٢٣٤ " : "DUK1234"}
-                  fullWidth
-                  inputProps={{
-                    style: {
-                      direction: /^[\u0600-\u06FF]/.test(plateValue)
-                        ? "rtl"
-                        : "ltr",
-                      textAlign: /^[\u0600-\u06FF]/.test(plateValue)
-                        ? "right"
-                        : "left",
-                    },
-                    maxLength: 10, // adjust as needed
-                  }}
-                />
-
                 {/*  <FormControl fullWidth>
                   <FormLabel>{t("Vehicle Plate number")}</FormLabel>
                   <SaudiPlateInput
@@ -602,16 +627,57 @@ const VisitorForm = () => {
                 </FormControl> */}
 
                 {/* Vehicle type dropdown */}
-                <FormControl fullWidth error={!!error.VehicleType}>
+                <FormControl fullWidth error={!!error.vehicleType}>
                   <VehicleTypeDropdown
-                    value={vehicleType}
+                    value={visitor.vehicleType}
                     onChange={handleVehicleTypeChange}
                   />
-                  {error.VehicleType && (
-                    <FormHelperText>{error.VehicleType}</FormHelperText>
+                  {error.vehicleType && (
+                    <FormHelperText>{error.vehicleType}</FormHelperText>
                   )}
                 </FormControl>
+
+                {/* Saudi Plate input */}
+                <TextField
+                  label={
+                    <span>
+                      {t("Vehicle Number")}{" "}
+                      <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                  name="vehicleplatenumber"
+                  value={visitor.vehicleplatenumber}
+                  onChange={handleVisitorChange}
+                  variant="outlined"
+                  error={!!error.vehicleplatenumber}
+                  helperText={error.vehicleplatenumber}
+                  placeholder={isArabic ? "د و ك ١٢٣٤ " : "DUK1234"}
+                  fullWidth
+                  inputProps={{
+                    style: {
+                      direction: /^[\u0600-\u06FF]/.test(
+                        visitor.vehicleplatenumber
+                      )
+                        ? "rtl"
+                        : "ltr",
+                      textAlign: /^[\u0600-\u06FF]/.test(
+                        visitor.vehicleplatenumber
+                      )
+                        ? "right"
+                        : "left",
+                    },
+                    maxLength: 10, // adjust as needed
+                  }}
+                />
               </Box>
+            </div>
+
+            {/* --- End Camera Integration --- */}
+            {/*  <div>
+              <FaceCamera />
+            </div> */}
+            <div>
+              <FaceCapture onCapture={handleImageCapture} />
             </div>
 
             <AddvisitorTab
@@ -620,6 +686,8 @@ const VisitorForm = () => {
               handleFileChange={handleFileChange}
               currentTab={currentTab}
               setCurrentTab={setCurrentTab}
+              error={docErrors[currentTab] || {}}
+              handleImageRemove={handleImageRemove}
             />
             {/* Submit */}
             <button
@@ -656,7 +724,7 @@ const VisitorForm = () => {
 
       <div className="bg-white p-6 rounded-md shadow-md xl:w-auto w-auto h-full">
         <div className="text-lg font-semibold">Dummy Data</div>
-        <GetVisitorData />
+        <GetVisitorData visitors={visitor} />
       </div>
     </div>
   );

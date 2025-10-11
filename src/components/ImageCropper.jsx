@@ -5,7 +5,7 @@ import getCroppedImg from "./cropImage";
 
 const ImageCropper = ({ imageSrc, onCancel, onComplete }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(0.8);
+  const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 

@@ -21,11 +21,13 @@ export default function AddvisitorTab({
   handleFileChange,
   currentTab,
   setCurrentTab,
+  error,
+  handleImageRemove,
 }) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar" || i18n.language === "ar-SA";
   const [inputError, setInputError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  //const [submitted, setSubmitted] = useState(false);
 
   const tabs = [
     { name: t("passport"), key: "passport" },
@@ -34,7 +36,6 @@ export default function AddvisitorTab({
     { name: t("gccId"), key: "gccId" },
   ];
 
-  /* const [currentTab, setCurrentTab] = useState("iqama");*/
   const doc = documents[currentTab]; // current document state
 
   return (
@@ -110,19 +111,29 @@ export default function AddvisitorTab({
             name="documentNumber"
             value={doc.documentNumber}
             onChange={(e) => {
-              const value = e.target.value;
-              const isValid = /^[a-zA-Z0-9]*$/.test(value);
+              const rawValue = e.target.value;
+              // Remove all characters that are NOT a-z, A-Z, or 0-9
+              const filteredValue = rawValue.replace(/[^a-zA-Z0-9]/g, "");
 
-              // Set or clear error
-              if (!isValid) {
+              // If filtered value differs, it means invalid chars were removed
+              if (rawValue !== filteredValue) {
                 setInputError(
                   t("Only English alphanumeric characters allowed")
                 );
-                return; // stop here, don't update state or input
+              } else {
+                setInputError("");
               }
-              // If valid, clear error and update state
-              setInputError("");
-              onDocumentChange(e, currentTab);
+
+              // Create a synthetic event with filtered value to pass upward
+              onDocumentChange(
+                {
+                  target: {
+                    name: e.target.name,
+                    value: filteredValue,
+                  },
+                },
+                currentTab
+              );
             }}
             placeholder={t("Document Number")}
             label={
@@ -130,8 +141,8 @@ export default function AddvisitorTab({
                 {t("Document Number")} <span className="text-red-500">*</span>
               </span>
             }
-            error={!!inputError}
-            helperText={inputError}
+            error={!!inputError || !!error?.documentNumber}
+            helperText={inputError || error?.documentNumber}
             fullWidth
             variant="outlined"
             inputProps={{
@@ -169,6 +180,8 @@ export default function AddvisitorTab({
                 textField: {
                   fullWidth: true,
                   variant: "outlined",
+                  error: !!error?.expiryDate,
+                  helperText: error?.expiryDate,
                   InputLabelProps: { shrink: true },
                   inputProps: {
                     dir: isRTL ? "rtl" : "ltr",
@@ -185,7 +198,8 @@ export default function AddvisitorTab({
             handleFileChange={handleFileChange}
             documents={documents}
             t={t}
-            submitted={submitted}
+            handleImageRemove={handleImageRemove}
+            //submitted={submitted}
           />
         </div>
       </div>

@@ -20,6 +20,8 @@ import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import VisitorSelfRegistration from "./pages/VisitorSelfRegistration";
 import TestPage from "./pages/testpage";
+import "./App.css";
+import VisitsTable from "./components/VisitsTable";
 
 const App = () => {
   const { i18n } = useTranslation();
@@ -50,6 +52,7 @@ const App = () => {
             <Route path="contact" element={<Contact />} />
             <Route path="userprofile" element={<UserProfile />} />
             <Route path="editprofile" element={<EditProfile />} />
+            <Route path="visitorreport" element={<VisitsTable />} />
             {/* <Route path="addvisitor" element={<AddVisitorForm />} /> */}
 
             <Route path="dashboard" element={<DashboardLayout />}>

@@ -4,7 +4,7 @@ import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import { useTranslation } from "react-i18next";
 
-export default function CountrySelect({ value, onChange }) {
+export default function CountrySelect({ value, onChange, error }) {
   const { t } = useTranslation();
   return (
     <Autocomplete
@@ -65,6 +65,8 @@ export default function CountrySelect({ value, onChange }) {
               {t("Nationality")} <span style={{ color: "red" }}>*</span>
             </span>
           }
+          error={error}
+          //helperText={error ? t("Please select a nationality") : ""}
           inputProps={{
             ...params.inputProps,
             autoComplete: "new-password",

@@ -47,3 +47,62 @@ input[type="file"] {
     gap: 1.5rem; /* equal to Tailwind's gap-6 */
   }
 }
+
+
+/* Container for the video and overlay */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 75%; /* 4:3 Aspect Ratio (height / width * 100) - Adjust as needed */
+  /* For example, 16:9 aspect ratio would be padding-bottom: 56.25%; */
+  height: 0; /* Important to make padding-bottom work for aspect ratio */
+  background-color: black; /* Background color if video doesn't fill */
+}
+
+.video-container video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the video covers the entire container */
+  transform: scaleX(-1); /* Flips the camera feed horizontally like a mirror */
+}
+
+/* The overlay graphic for the headshot boundary */
+.overlay-graphic {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Creates a large dark overlay */
+  border-radius: 10px; /* Match video container's border-radius if needed */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none; /* Allows clicks to pass through to the video */
+}
+
+.overlay-graphic::after {
+  content: '';
+  display: block;
+  width: 50%; /* Adjust size of the oval */
+  padding-bottom: 70%; /* Adjust height of the oval (e.g., 70% of its width for a portrait oval) */
+  background-color: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.7); /* Dashed white border */
+  border-radius: 50%; /* Makes it an oval/circle */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.overlay-text {
+  position: absolute;
+  top: 10%; /* Adjust position as needed */
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-size: 1.1em;
+  font-weight: bold;
+  pointer-events: none; /* Allow clicks to pass through */
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
