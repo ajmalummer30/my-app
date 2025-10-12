@@ -9,24 +9,26 @@ import {
 } from "@mui/material";
 // import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"; // Uncomment if you want the arrow icon
 
-const languages = [
+
+
+function LanguageSwitcher() {
+  const { i18n } = useTranslation();
+  const [anchorEl, setAnchorEl] = React.useState(null);
+
+  const languages = [
   {
     code: "en",
     name: "English",
     country_code: "us",
-    flag: "🇺🇸",
+    flagUrl: "https://flagcdn.com/w40/us.png",
   },
   {
     code: "ar",
     name: "العربية",
     country_code: "sa",
-    flag: "🇸🇦",
+    flagUrl: "https://flagcdn.com/w40/sa.png",
   },
 ];
-
-function LanguageSwitcher() {
-  const { i18n } = useTranslation();
-  const [anchorEl, setAnchorEl] = React.useState(null);
 
   const currentLang =
     languages.find((l) => l.code === i18n.language) || languages[0];
@@ -53,7 +55,15 @@ function LanguageSwitcher() {
         onClick={handleClick}
         // endIcon={<KeyboardArrowDownIcon sx={{ fontSize: 18 }} />} // smaller arrow, uncomment if needed
         startIcon={
-          <span style={{ fontSize: "1.2rem" }}>{currentLang.flag}</span>
+         // <span style={{ fontSize: "1.2rem" }}>{currentLang.flag}</span>
+          <img
+    src={currentLang.flagUrl}
+    alt={currentLang.code}
+    width="40"
+    height="20"
+    style={{ borderRadius: 2 }}
+  /> 
+          
         }
         sx={{
           textTransform: "none",
@@ -73,14 +83,21 @@ function LanguageSwitcher() {
       </Button>
 
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
-        {languages.map(({ code, name, flag }) => (
+        {languages.map(({ code, name, flagUrl }) => (
           <MenuItem
             key={code}
             selected={code === currentLang.code}
             onClick={() => changeLanguage(code)}
           >
             <ListItemIcon>
-              <span style={{ fontSize: "1.5rem" }}>{flag}</span>
+              {/* <span style={{ fontSize: "1.5rem" }}>{flag}</span> */}
+             <img
+    src={flagUrl}
+    alt={code}
+    width="20"
+    height="14"
+    style={{ borderRadius: 2 }}
+  />
             </ListItemIcon>
             <ListItemText>{name}</ListItemText>
           </MenuItem>

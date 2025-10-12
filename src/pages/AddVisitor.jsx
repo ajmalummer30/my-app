@@ -29,6 +29,7 @@ import GetVisitorData from "../components/GetVisitorData";
 import CameraCapture from "../components/CameraCapture";
 import FaceCapture from "../components/FaceCapture";
 
+
 const VisitorForm = () => {
   const storage = getStorage();
   const { i18n, t } = useTranslation();
@@ -47,8 +48,7 @@ const VisitorForm = () => {
     Mobile: "",
     nationality: "",
     dateofbirth: "",
-    vehicleplatenumber: "",
-    vehicleType: "",
+ 
   });
 
   const [documents, setDocuments] = useState({
@@ -93,31 +93,8 @@ const VisitorForm = () => {
     const arabicRegex = /^[\u0600-\u06FF\s]*$/;
     const englishRegex = /^[A-Za-z\s]*$/;
     const emailRegex = /^[a-zA-Z0-9@._\-+]*$/;
-    const engPlateRegex = /^[A-Za-z0-9 ]*$/;
-    if (name === "vehicleplatenumber") {
-      if (i18n.language.startsWith("ar")) {
-        if (/^[\u0600-\u06FF0-9 ]*$/.test(value)) {
-          setVisitor((prev) => ({ ...prev, [name]: value }));
-          setError((prev) => ({ ...prev, [name]: "" }));
-        } else {
-          setError((prev) => ({
-            ...prev,
-            [name]: "يرجى استخدام الأحرف العربية والأرقام الإنجليزية فقط",
-          }));
-        }
-      } else {
-        if (/^[A-Za-z0-9 ]*$/.test(value)) {
-          setVisitor((prev) => ({ ...prev, [name]: value }));
-          setError((prev) => ({ ...prev, [name]: "" }));
-        } else {
-          setError((prev) => ({
-            ...prev,
-            [name]: "Please use English letters and numbers only",
-          }));
-        }
-      }
-      return; // exit early
-    }
+   
+   
     if (name === "email") {
       const isValidEmailChars = emailRegex.test(value);
       if (!isValidEmailChars) {
@@ -240,18 +217,7 @@ const VisitorForm = () => {
       }
     }
 
-    // Conditional vehicle validation (separate errors)
-    if (visitor.vehicleplatenumber && !visitor.vehicleType) {
-      newErrors.vehicleType = t(
-        "Vehicle type is required when number is provided"
-      );
-    }
-
-    if (visitor.vehicleType && !visitor.vehicleplatenumber) {
-      newErrors.vehicleplatenumber = t(
-        "Vehicle number is required when type is selected"
-      );
-    }
+    
 
     if (Object.keys(newErrors).length > 0) {
       setError(newErrors);
@@ -362,8 +328,7 @@ const VisitorForm = () => {
         Mobile: "",
         nationality: "",
         dateofbirth: "",
-        vehicleplatenumber: "",
-        vehicleType: "",
+        
       });
       setDocuments({
         passport: {
@@ -413,24 +378,14 @@ const VisitorForm = () => {
     setError((prev) => ({ ...prev, dateOfBirth: "" })); // clear DOB error on change
   };
 
-  const handleVehicleTypeChange = (event) => {
-    setVisitor((prev) => {
-      return {
-        ...prev,
-        vehicleType: event.target.value,
-      };
-    });
-    //setVisitor(event.target.value);
-  };
-
   const handleImageCapture = (imageUrl) => {
     setCapturedImage(imageUrl); // Save the captured image URL
   };
 
   return (
-    <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-4 px-4">
+    <div className="w-full grid grid-cols-1  gap-4 px-4">
       <div className="bg-white p-6 rounded-md shadow-md">
-        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto w-full max-w-5xl px-4">
+        <div className="max-h-auto  w-full  px-4">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Visitor Inputs */}
 
@@ -606,72 +561,7 @@ const VisitorForm = () => {
               </div>
             </LocalizationProvider>
 
-            <div className="w-full">
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                  gap: 2, // equals 16px spacing
-                  mb: 2,
-                  width: "100%",
-                  alignItems: "flex-end", // vertical alignment for form labels/inputs
-                }}
-              >
-                {/*  <FormControl fullWidth>
-                  <FormLabel>{t("Vehicle Plate number")}</FormLabel>
-                  <SaudiPlateInput
-                    lang={i18n.language}
-                    onChange={setPlateValue}
-                  />
-                  {plateValue}
-                </FormControl> */}
-
-                {/* Vehicle type dropdown */}
-                <FormControl fullWidth error={!!error.vehicleType}>
-                  <VehicleTypeDropdown
-                    value={visitor.vehicleType}
-                    onChange={handleVehicleTypeChange}
-                  />
-                  {error.vehicleType && (
-                    <FormHelperText>{error.vehicleType}</FormHelperText>
-                  )}
-                </FormControl>
-
-                {/* Saudi Plate input */}
-                <TextField
-                  label={
-                    <span>
-                      {t("Vehicle Number")}{" "}
-                      <span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
-                  name="vehicleplatenumber"
-                  value={visitor.vehicleplatenumber}
-                  onChange={handleVisitorChange}
-                  variant="outlined"
-                  error={!!error.vehicleplatenumber}
-                  helperText={error.vehicleplatenumber}
-                  placeholder={isArabic ? "د و ك ١٢٣٤ " : "DUK1234"}
-                  fullWidth
-                  inputProps={{
-                    style: {
-                      direction: /^[\u0600-\u06FF]/.test(
-                        visitor.vehicleplatenumber
-                      )
-                        ? "rtl"
-                        : "ltr",
-                      textAlign: /^[\u0600-\u06FF]/.test(
-                        visitor.vehicleplatenumber
-                      )
-                        ? "right"
-                        : "left",
-                    },
-                    maxLength: 10, // adjust as needed
-                  }}
-                />
-              </Box>
-            </div>
-
+                 
             {/* --- End Camera Integration --- */}
             {/*  <div>
               <FaceCamera />
@@ -722,10 +612,10 @@ const VisitorForm = () => {
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-md shadow-md xl:w-auto w-auto h-full">
+     {/*  <div className="bg-white p-6 rounded-md shadow-md xl:w-auto w-auto h-full">
         <div className="text-lg font-semibold">Dummy Data</div>
         <GetVisitorData visitors={visitor} />
-      </div>
+      </div> */}
     </div>
   );
 };

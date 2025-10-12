@@ -2,6 +2,8 @@ import { Outlet } from "react-router-dom";
 import Navbar from "./NavBar";
 import Footer from "./Footer";
 import SideMenu from "./SideMenu";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Layout = () => {
   return (
@@ -27,6 +29,9 @@ const Layout = () => {
             </div>
           </div>
         </main>
+         {/* Toast Container globally available */}
+        <ToastContainer position="top-right" autoClose={3000} />
+
 
         {/* <Footer /> */}
       </div>

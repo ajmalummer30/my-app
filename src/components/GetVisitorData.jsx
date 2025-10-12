@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { getDocs, where } from "firebase/firestore";
 import { db } from "./Firebase";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import VehicleInfoForm from "../components/VehicleInfoForm";
+import { useTranslation } from "react-i18next";
+// MUI Modal
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+} from "@mui/material";
+
+
 import {
   collection,
   onSnapshot,
@@ -8,109 +21,222 @@ import {
   orderBy,
   addDoc,
   serverTimestamp,
+  where,
+  doc,
+  updateDoc,
+  getDoc,
 } from "firebase/firestore";
-import { doc, updateDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
-// ✅ Destructure props from function
 const VisitorsIDCards = (props) => {
+  const { i18n, t } = useTranslation();
   const [getvisitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visitorStatus, setVisitorStatus] = useState({});
+  const [userStation, setUserStation] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedVisitor, setSelectedVisitor] = useState(null);
+   const [vehicleInfo, setVehicleInfo] = useState({
+    vehicleplatenumber: "",
+    vehicleType: "",
+  });
+  const [vehicleError, setVehicleError] = useState({});
 
   useEffect(() => {
-    const q = query(collection(db, "visitors"), orderBy("createdAt", "desc"));
+    const visitorsQuery = query(
+      collection(db, "visitors"),
+      orderBy("createdAt", "desc")
+    );
 
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const visitorData = snapshot.docs.map((doc) => ({
+    const unsubscribe = onSnapshot(visitorsQuery, (snapshot) => {
+      const visitorsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setVisitors(visitorData);
+      setVisitors(visitorsData);
       setLoading(false);
-
-      // Check current check-in status for each visitor
-      const statusMap = {};
-      for (const visitor of visitorData) {
-        const visitsQuery = query(
-          collection(db, "visits"),
-          where("visitorId", "==", visitor.id),
-          where("status", "==", "checked-in")
-        );
-        const visitSnap = await getDocs(visitsQuery);
-        if (!visitSnap.empty) {
-          statusMap[visitor.id] = {
-            status: "checked-in",
-            visitId: visitSnap.docs[0].id,
-          };
-        } else {
-          statusMap[visitor.id] = {
-            status: "checked-out",
-            visitId: null,
-          };
-        }
-      }
-
-      setVisitorStatus(statusMap);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const handleToggleVisit = async (visitor) => {
+  useEffect(() => {
+    const visitsQuery = query(
+      collection(db, "visits"),
+      where("status", "==", "checked-in")
+    );
+
+    const unsubscribe = onSnapshot(visitsQuery, (snapshot) => {
+      const statusMap = {};
+      snapshot.docs.forEach((doc) => {
+        const visit = doc.data();
+        statusMap[visit.visitorId] = {
+          status: "checked-in",
+          visitId: doc.id,
+        };
+      });
+      setVisitorStatus(statusMap);
+      
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserStation = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (user) {
+          const userDocRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userDocRef);
+
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            setUserStation(userData.station || "Unknown");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch user station:", error);
+      }
+    };
+
+    fetchUserStation();
+  }, []);
+
+ const handleToggleVisit = async (visitor) => {
     const currentStatus = visitorStatus[visitor.id];
 
     if (currentStatus?.status === "checked-in") {
-      // Check out
+      // Check-out logic...
       try {
         const visitRef = doc(db, "visits", currentStatus.visitId);
-        await updateDoc(visitRef, {
-          checkOutTime: serverTimestamp(),
-          status: "checked-out",
-        });
-        setVisitorStatus((prev) => ({
-          ...prev,
-          [visitor.id]: {
+        const visitSnap = await getDoc(visitRef);
+
+        if (visitSnap.exists()) {
+          const visitData = visitSnap.data();
+
+          if (visitData.station !== userStation) {
+            toast.warning("❌ You cannot check out this visitor. Station mismatch.");
+            return;
+          }
+
+          await updateDoc(visitRef, {
+            checkOutTime: serverTimestamp(),
             status: "checked-out",
-            visitId: null,
-          },
-        }));
-        alert(`Checked out ${visitor.name}`);
+          });
+
+          setVisitorStatus(prev => ({
+            ...prev,
+            [visitor.id]: { status: "checked-out", visitId: null },
+          }));
+
+          toast.success(`✅ Checked out ${visitor.name}`);
+        }
       } catch (error) {
         console.error("Check-out error:", error);
-        alert("Check-out failed.");
+        toast.error("❌ Check-out failed.");
       }
     } else {
-      // Check in
-      try {
-        const docRef = await addDoc(collection(db, "visits"), {
-          visitorId: visitor.id,
-          name: visitor.name,
-          mobile: visitor.Mobile,
-          checkInTime: serverTimestamp(),
-          checkOutTime: null,
-          status: "checked-in",
-        });
-        setVisitorStatus((prev) => ({
+      // 🔥 Open modal for vehicle info on check-in
+      setSelectedVisitor(visitor);
+      setModalOpen(true);
+    }
+  };
+
+   const handleSubmitVehicleInfo = async () => {
+    // Basic validation
+    const errors = {};
+    if (!vehicleInfo.vehicleplatenumber) {
+      errors.vehicleplatenumber = "Plate number is required";
+    }
+    if (!vehicleInfo.vehicleType) {
+      errors.vehicleType = "Vehicle type is required";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setVehicleError(errors);
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "visits"), {
+        visitorId: selectedVisitor.id,
+        name: selectedVisitor.name,
+        mobile: selectedVisitor.Mobile,
+        checkInTime: serverTimestamp(),
+        checkOutTime: null,
+        status: "checked-in",
+        station: userStation || "Unknown",
+        vehicleplatenumber: vehicleInfo.vehicleplatenumber,
+        vehicleType: vehicleInfo.vehicleType,
+      });
+
+      setVisitorStatus(prev => ({
+        ...prev,
+        [selectedVisitor.id]: { status: "checked-in", visitId: null },
+      }));
+
+      toast.success(`✅ Checked in ${selectedVisitor.name}`);
+
+      // Close modal & reset
+      setModalOpen(false);
+      setVehicleInfo({ vehicleplatenumber: "", vehicleType: "" });
+      setVehicleError({});
+    } catch (error) {
+      console.error("Check-in error:", error);
+      toast.error("❌ Check-in failed.");
+    }
+  };
+
+
+  const handleVehicleChange = (e) => {
+
+     const { name, value } = e.target;
+      if (name === "vehicleplatenumber") {
+    if (i18n.language.startsWith("ar")) {
+      if (/^[\u0600-\u06FF0-9 ]*$/.test(value)) {
+        setVehicleInfo((prev) => ({ ...prev, [name]: value }));
+        setVehicleError((prev) => ({ ...prev, [name]: "" }));
+      } else {
+        setVehicleError((prev) => ({
           ...prev,
-          [visitor.id]: {
-            status: "checked-in",
-            visitId: docRef.id,
-          },
+          [name]: "يرجى استخدام الأحرف العربية والأرقام الإنجليزية فقط",
         }));
-        alert(`Checked in ${visitor.name}`);
-      } catch (error) {
-        console.error("Check-in error:", error);
-        alert("Check-in failed.");
+      }
+    } else {
+      if (/^[A-Za-z0-9 ]*$/.test(value)) {
+        setVehicleInfo((prev) => ({ ...prev, [name]: value }));
+        setVehicleError((prev) => ({ ...prev, [name]: "" }));
+      } else {
+        setVehicleError((prev) => ({
+          ...prev,
+          [name]: "Please use English letters and numbers only",
+        }));
       }
     }
+    return;
+  }
+
+    setVehicleInfo((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleVehicleTypeChange = (value) => {
+    setVehicleInfo((prev) => ({
+      ...prev,
+      vehicleType: value,
+    }));
   };
 
   return (
     <div className="w-full flex justify-center">
-      <div className="max-h-[calc(100vh-12rem)] overflow-y-auto w-full max-w-5xl px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2 gap-6 w-auto max-w-5xl px-4">
+      <div className="max-h-auto overflow-y-auto w-full  px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4  gap-6 w-auto  px-4">
           {getvisitors.map((visitor) => {
-            console.log("visitor", visitor);
             return (
               <div
                 key={visitor.id}
@@ -137,17 +263,13 @@ const VisitorsIDCards = (props) => {
                   </p>
                   <p>
                     <span className="font-semibold">Nationality:</span>{" "}
-                    {visitor.nationality
-                      ? `${visitor.nationality.label}`
-                      : "N/A"}
+                    {visitor.nationality ? visitor.nationality.label : "N/A"}
                   </p>
 
                   <p>
                     <span className="font-semibold">DOB:</span>{" "}
                     {visitor.dateofbirth
-                      ? new Date(
-                          visitor.dateofbirth.seconds * 1000
-                        ).toLocaleDateString()
+                      ? new Date(visitor.dateofbirth.seconds * 1000).toLocaleDateString()
                       : "N/A"}
                   </p>
                   <p>
@@ -173,9 +295,30 @@ const VisitorsIDCards = (props) => {
           })}
         </div>
       </div>
+
+      {/* ✅ Vehicle Modal */}
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Enter Vehicle Details</DialogTitle>
+        <DialogContent>
+                <VehicleInfoForm
+        
+        visitor={vehicleInfo}
+        error={vehicleError}
+        handleVisitorChange={handleVehicleChange}
+        handleVehicleTypeChange={handleVehicleTypeChange}
+      />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleSubmitVehicleInfo} variant="contained" color="primary">
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
 
-// ✅ Wrap with React.memo before export
 export default React.memo(VisitorsIDCards);

@@ -29,7 +29,8 @@ const FaceCapture = ({ onCapture }) => {
           await videoRef.current.play();
         }
       } catch (error) {
-        alert("Could not access webcam. Please allow webcam permissions.");
+        //console.log("error is" ,error)
+        alert("error is " + error);
       }
     };
 
@@ -47,7 +48,9 @@ const FaceCapture = ({ onCapture }) => {
   const captureFace = async () => {
     if (!videoRef.current) return;
 
-    const model = await blazeface.load();
+    //const model = await blazeface.load();
+    const model = await blazeface.load({ fromTFHub: true });
+
     const predictions = await model.estimateFaces(videoRef.current, false);
 
     if (predictions.length > 0) {

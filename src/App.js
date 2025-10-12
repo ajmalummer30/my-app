@@ -22,6 +22,7 @@ import VisitorSelfRegistration from "./pages/VisitorSelfRegistration";
 import TestPage from "./pages/testpage";
 import "./App.css";
 import VisitsTable from "./components/VisitsTable";
+import GetVisitorData from "./components/GetVisitorData";
 
 const App = () => {
   const { i18n } = useTranslation();
@@ -53,6 +54,7 @@ const App = () => {
             <Route path="userprofile" element={<UserProfile />} />
             <Route path="editprofile" element={<EditProfile />} />
             <Route path="visitorreport" element={<VisitsTable />} />
+            <Route path="showvisitor" element={<GetVisitorData />} />
             {/* <Route path="addvisitor" element={<AddVisitorForm />} /> */}
 
             <Route path="dashboard" element={<DashboardLayout />}>
