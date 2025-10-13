@@ -57,7 +57,7 @@ export default function Login() {
 
       const combinedUser = { ...firebaseUser, ...userData };
       setUser(combinedUser);
-      navigate("/app");
+      navigate("/app/addvisitor");
       console.log("setuser from login page");
     } catch (error) {
       console.error("Google Sign-In Error:", error);

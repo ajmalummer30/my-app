@@ -4,6 +4,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import VehicleInfoForm from "../components/VehicleInfoForm";
 import { useTranslation } from "react-i18next";
+
 // MUI Modal
 import {
   Dialog,
@@ -41,6 +42,7 @@ const VisitorsIDCards = (props) => {
     vehicleType: "",
   });
   const [vehicleError, setVehicleError] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const visitorsQuery = query(
@@ -225,18 +227,38 @@ const VisitorsIDCards = (props) => {
     }));
   };
 
-  const handleVehicleTypeChange = (value) => {
+  const handleVehicleTypeChange = (event) => {
+    console.log("type" +event)
     setVehicleInfo((prev) => ({
       ...prev,
-      vehicleType: value,
+      vehicleType: event.target.value,
     }));
   };
 
   return (
     <div className="w-full flex justify-center">
+     
       <div className="max-h-auto overflow-y-auto w-full  px-4">
+         <div className="my-4 px-4">
+              <input
+                type="text"
+                placeholder="Search by name or mobile..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring focus:border-blue-300"
+              />
+          </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4  gap-6 w-auto  px-4">
-          {getvisitors.map((visitor) => {
+
+          
+          {getvisitors.filter((visitor) => {
+    if (!searchTerm.trim()) return true; // Show all if search is empty
+    const term = searchTerm.toLowerCase();
+    const name = visitor.name?.toLowerCase() || "";
+    const mobile = visitor.Mobile?.toLowerCase() || "";
+    return name.includes(term) || mobile.includes(term);
+  }).map((visitor) => {
             return (
               <div
                 key={visitor.id}

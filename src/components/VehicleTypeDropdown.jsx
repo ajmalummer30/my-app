@@ -7,8 +7,14 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import AirportShuttleIcon from "@mui/icons-material/AirportShuttle";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import CommuteIcon from "@mui/icons-material/Commute";
+import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 
 const vehicleTypes = [
+  {
+    value: "walk",
+    labelKey: "vehicleType.walk",
+    icon: <DirectionsWalkIcon sx={{ color: "#8d6e63" }} />, // you can change the color as needed
+  },
   {
     value: "taxi",
     labelKey: "vehicleType.taxi",

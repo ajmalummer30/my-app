@@ -28,6 +28,7 @@ import { arSA, enUS } from "date-fns/locale";
 import GetVisitorData from "../components/GetVisitorData";
 import CameraCapture from "../components/CameraCapture";
 import FaceCapture from "../components/FaceCapture";
+import RowRadioButtonsGroup from "../components/GenderRadioButton";
 
 
 const VisitorForm = () => {
@@ -40,6 +41,7 @@ const VisitorForm = () => {
   const [currentTab, setCurrentTab] = useState("passport");
   const [docErrors, setDocErrors] = useState({});
   const [capturedImage, setCapturedImage] = useState(null);
+   const [gender, setGender] = useState('');
 
   const [visitor, setVisitor] = useState({
     name: "",
@@ -48,6 +50,7 @@ const VisitorForm = () => {
     Mobile: "",
     nationality: "",
     dateofbirth: "",
+    companyname:"",
  
   });
 
@@ -217,6 +220,10 @@ const VisitorForm = () => {
       }
     }
 
+    if (!gender) {
+  newErrors.gender = t("This field is required");
+}
+
     
 
     if (Object.keys(newErrors).length > 0) {
@@ -290,6 +297,7 @@ const VisitorForm = () => {
 
       const payload = {
         ...visitor,
+        gender :gender,
         // VehicleType: vehicleType,
         documents: {
           passport: {
@@ -328,6 +336,7 @@ const VisitorForm = () => {
         Mobile: "",
         nationality: "",
         dateofbirth: "",
+        companyname:"",
         
       });
       setDocuments({
@@ -382,6 +391,12 @@ const VisitorForm = () => {
     setCapturedImage(imageUrl); // Save the captured image URL
   };
 
+   const handleGenderChange = (event) => {
+    setGender(event.target.value);
+     console.log("Selected gender:", event.target.value);
+    // You can also do other things here when the value changes
+  }
+
   return (
     <div className="w-full grid grid-cols-1  gap-4 px-4">
       <div className="bg-white p-6 rounded-md shadow-md">
@@ -417,27 +432,49 @@ const VisitorForm = () => {
                 />
               </div>
 
-              <div className="w-full">
+              <div>
+                {/* Country Select */}
+                <FormControl fullWidth error={!!error.nationality}>
+                  <CountrySelect
+                    value={visitor.nationality}
+                    error={!!error.nationality} // <-- Pass error prop here
+                    onChange={(selectedCountry) => {
+                      setVisitor((prev) => ({
+                        ...prev,
+                        nationality: selectedCountry,
+                      }));
+                      setError((prev) => ({ ...prev, nationality: "" })); // clear error on change
+                    }}
+                  />
+
+                  {error.nationality && (
+                    <FormHelperText>{error.nationality}</FormHelperText>
+                  )}
+                </FormControl>
+              </div>
+
+             
+               <div>
                 <TextField
-                  type="email"
-                  name="email" // Sets the name attribute, useful for forms
-                  value={visitor.email} // Controlled component’s current value
-                  onChange={handleVisitorChange} // Function called when input changes
-                  placeholder={t("email")}
+                  type="text"
+                  name="companyname"
+                  value={visitor.companyname}
                   label={
                     <span
                       style={{
                         direction: i18n.language === "ar" ? "rtl" : "ltr",
                       }}
                     >
-                      {t("email")} <span style={{ color: "red" }}></span>
+                      {t("Company Name")}{" "}
+                      <span style={{ color: "red" }}>*</span>
                     </span>
                   }
-                  id="outlined-basic"
-                  variant="outlined"
+                  onChange={handleVisitorChange}
+                  placeholder={t("Company Name")}
                   fullWidth
-                  error={!!error.email}
-                  helperText={error.email}
+                  variant="outlined"
+                  error={!!error.companyname}
+                  helperText={error.companyname}
                 />
               </div>
 
@@ -462,6 +499,29 @@ const VisitorForm = () => {
                   variant="outlined"
                   error={!!error.visitReason}
                   helperText={error.visitReason}
+                />
+              </div>
+               <div className="w-full">
+                <TextField
+                  type="email"
+                  name="email" // Sets the name attribute, useful for forms
+                  value={visitor.email} // Controlled component’s current value
+                  onChange={handleVisitorChange} // Function called when input changes
+                  placeholder={t("email")}
+                  label={
+                    <span
+                      style={{
+                        direction: i18n.language === "ar" ? "rtl" : "ltr",
+                      }}
+                    >
+                      {t("email")} <span style={{ color: "red" }}></span>
+                    </span>
+                  }
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  error={!!error.email}
+                  helperText={error.email}
                 />
               </div>
               <div>
@@ -497,6 +557,8 @@ const VisitorForm = () => {
                   )}
                 </FormControl>
               </div>
+                  
+              
             </div>
             {/* <PhoneInput
               country={"sa"}
@@ -513,7 +575,7 @@ const VisitorForm = () => {
                   : "Enter phone number"
               }
             /> */}
-
+        
             <LocalizationProvider
               dateAdapter={AdapterDateFns}
               adapterLocale={i18n.language === "ar" ? arSA : enUS}
@@ -539,25 +601,11 @@ const VisitorForm = () => {
                     },
                   }}
                 />
+                
+              <RowRadioButtonsGroup onChange={handleGenderChange}  error={error.gender} />
+            
 
-                {/* Country Select */}
-                <FormControl fullWidth error={!!error.nationality}>
-                  <CountrySelect
-                    value={visitor.nationality}
-                    error={!!error.nationality} // <-- Pass error prop here
-                    onChange={(selectedCountry) => {
-                      setVisitor((prev) => ({
-                        ...prev,
-                        nationality: selectedCountry,
-                      }));
-                      setError((prev) => ({ ...prev, nationality: "" })); // clear error on change
-                    }}
-                  />
-
-                  {error.nationality && (
-                    <FormHelperText>{error.nationality}</FormHelperText>
-                  )}
-                </FormControl>
+                
               </div>
             </LocalizationProvider>
 

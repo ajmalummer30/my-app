@@ -59,8 +59,8 @@ function LanguageSwitcher() {
           <img
     src={currentLang.flagUrl}
     alt={currentLang.code}
-    width="40"
-    height="20"
+    width="30"
+    height="10"
     style={{ borderRadius: 2 }}
   /> 
           

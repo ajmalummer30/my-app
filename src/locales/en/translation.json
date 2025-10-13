@@ -13,6 +13,7 @@
     "DUK1234": "DUK1234",
     "vehicleType": {
         "selectPlaceholder": "Select a vehicle type",
+        "walk" :"walk",
         "taxi": "Taxi",
         "privateCar": "Private Car",
         "truck": "Truck",
