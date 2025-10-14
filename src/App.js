@@ -23,7 +23,8 @@ import TestPage from "./pages/testpage";
 import "./App.css";
 import VisitsTable from "./components/VisitsTable";
 import GetVisitorData from "./components/GetVisitorData";
-import ImageUploaderCropper from "./components/ImageuploaderCropper";
+import HomePage from "./pages/HomePage";
+import PassportUploader from "./components/passport uploader";
 
 const App = () => {
   const { i18n } = useTranslation();
@@ -56,7 +57,8 @@ const App = () => {
             <Route path="editprofile" element={<EditProfile />} />
             <Route path="visitorreport" element={<VisitsTable />} />
             <Route path="showvisitor" element={<GetVisitorData />} />
-             <Route path="testimage" element={<ImageUploaderCropper />} />
+            <Route path="mainmenu" element={<PassportUploader />} />
+
             {/* <Route path="addvisitor" element={<AddVisitorForm />} /> */}
 
             <Route path="dashboard" element={<DashboardLayout />}>

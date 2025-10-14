@@ -175,7 +175,7 @@ export default function VisitorSelfRegistration() {
   // Cleanup timer on unmount
   useEffect(() => {
     return () => clearInterval(timerRef.current);
-  }, []);
+  }, [])
 
   return (
     <>
