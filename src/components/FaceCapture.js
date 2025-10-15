@@ -2,11 +2,24 @@ import React, { useRef, useState, useEffect } from "react";
 import * as blazeface from "@tensorflow-models/blazeface";
 import "@tensorflow/tfjs";
 
-const FaceCapture = ({ onCapture }) => {
+const FaceCapture = ({ onCapture ,reset }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [previewing, setPreviewing] = useState(false);
   const [croppedFace, setCroppedFace] = useState(null);
+
+   // Reset cropped face if parent triggers reset
+  useEffect(() => {
+    if (reset) {
+      setCroppedFace(null);
+      setPreviewing(false);
+      // Stop webcam if running
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [reset]);
 
   // Start webcam preview: just set previewing true, actual stream setup in useEffect
   const startPreview = () => {
@@ -46,7 +59,23 @@ const FaceCapture = ({ onCapture }) => {
   }, [previewing]);
 
   const captureFace = async () => {
-    if (!videoRef.current) return;
+   
+     const video = videoRef.current;
+  const canvas = canvasRef.current;
+
+  // Safety checks
+  if (!video || !canvas) {
+    alert("Camera or canvas not ready. Please try again.");
+    return;
+  }
+
+  // Ensure video is ready (enough data)
+  if (video.readyState < 2) {
+    alert("Video stream not ready. Wait a moment and try again.");
+    return;
+  }
+
+     if (!videoRef.current) return;
 
     //const model = await blazeface.load();
     const model = await blazeface.load({ fromTFHub: true });
@@ -116,46 +145,78 @@ const FaceCapture = ({ onCapture }) => {
           onClick={startPreview}
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
         >
-          Start Webcam Preview
+         Capture Face
         </button>
       )}
 
-      {previewing && (
-        <div className="mt-4">
-          <video
-            ref={videoRef}
-            className="w-full max-w-[640px] aspect-video rounded-lg border border-gray-300 mx-auto"
-            style={{ transform: "scaleX(-1)" }} // mirror preview
-            autoPlay
-            muted
-          />
-          <div className="mt-3 flex space-x-3">
-            <button
-              type="button"
-              onClick={captureFace}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
-            >
-              Capture & Crop Face
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                // Stop stream and hide preview
-                if (videoRef.current?.srcObject) {
-                  videoRef.current.srcObject
-                    .getTracks()
-                    .forEach((track) => track.stop());
-                  videoRef.current.srcObject = null;
-                }
-                setPreviewing(false);
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded"
-            >
-              Cancel Preview
-            </button>
-          </div>
-        </div>
-      )}
+     {previewing && (
+  <div className="mt-4 relative w-full max-w-[640px] mx-auto">
+    {/* Video wrapper */}
+    <div className="relative">
+      <video
+        ref={videoRef}
+        className="w-full aspect-video rounded-lg border border-gray-300"
+        style={{ transform: "scaleX(-1)" }}
+        autoPlay
+        muted
+      />
+
+      {/* Circular overlay on top of video only */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none", // lets clicks pass through
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            width: "200px",
+            height: "200px",
+            borderRadius: "50%",
+            border: "3px solid rgba(255, 255, 255, 0.9)",
+            transform: "translate(-50%, -50%)",
+            background: "transparent",
+            boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)", // darkens outside circle
+          }}
+        />
+      </div>
+    </div>
+
+    {/* Buttons stay outside the overlay */}
+    <div className="mt-3 flex space-x-3">
+      <button
+        type="button"
+        onClick={captureFace}
+        className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
+      >
+        Capture & Crop Face
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (videoRef.current?.srcObject) {
+            videoRef.current.srcObject
+              .getTracks()
+              .forEach((track) => track.stop());
+            videoRef.current.srcObject = null;
+          }
+          setPreviewing(false);
+        }}
+        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded"
+      >
+        Cancel Preview
+      </button>
+    </div>
+  </div>
+)}
+
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
@@ -170,17 +231,27 @@ const FaceCapture = ({ onCapture }) => {
           <div className="mt-3 flex space-x-3">
             <button
               type="button"
-              onClick={() => setCroppedFace(null)}
+             onClick={() => {
+    setCroppedFace(null);       // clear child state
+    if (onCapture) onCapture(null); // clear parent state
+  }}
               className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded"
             >
               Remove Captured Image
             </button>
             <button
               type="button"
-              onClick={() => {
-                setCroppedFace(null);
-                startPreview();
-              }}
+             onClick={async () => {
+  // 1. Clear child local state
+  setCroppedFace(null);
+   if (onCapture) onCapture("null"); // notify parent
+
+  // 2. Notify parent
+ 
+
+  // 3. Restart preview
+  startPreview();
+}}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
             >
               Capture Again

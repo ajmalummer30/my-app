@@ -23,6 +23,7 @@ export default function AddvisitorTab({
   setCurrentTab,
   error,
   handleImageRemove,
+  clearError
 }) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar" || i18n.language === "ar-SA";
@@ -124,6 +125,11 @@ export default function AddvisitorTab({
                 setInputError("");
               }
 
+               // ✅ Clear parent error dynamically
+              if (error?.documentNumber && clearError) {
+                clearError("documentNumber", currentTab);
+              }
+
               // Create a synthetic event with filtered value to pass upward
               onDocumentChange(
                 {
@@ -166,6 +172,11 @@ export default function AddvisitorTab({
               value={doc.expiryDate ? dayjs(doc.expiryDate) : null}
               format="DD/MM/YYYY"
               onChange={(newValue) => {
+
+                 // ✅ Clear expiry date error once valid date chosen
+                if (error?.expiryDate && clearError) {
+                  clearError("expiryDate", currentTab);
+                }
                 onDocumentChange(
                   {
                     target: {

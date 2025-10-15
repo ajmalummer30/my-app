@@ -17,13 +17,13 @@ import AddVisitorForm from "./pages/AddVisitor";
 import PhoneAuth from "./Helperfunctions/PhoneAuth";
 import "./components/i18n";
 import { useTranslation } from "react-i18next";
-import { useEffect } from "react";
-import VisitorSelfRegistration from "./pages/VisitorSelfRegistration";
-import TestPage from "./pages/testpage";
+
+
+
 import "./App.css";
 import VisitsTable from "./components/VisitsTable";
 import GetVisitorData from "./components/GetVisitorData";
-import HomePage from "./pages/HomePage";
+
 import PassportUploader from "./components/passport uploader";
 
 const App = () => {
@@ -43,8 +43,8 @@ const App = () => {
         {/* Login route */}
         <Route path="/login" element={<Login />} />
         <Route path="/phonelogin" element={<PhoneAuth />} />
-        <Route path="/tespage" element={<TestPage />} />
-        <Route path="/selfregister" element={<VisitorSelfRegistration />} />
+       
+      
 
         {/* Protected Routes */}
         <Route element={<RequireAuth />}>

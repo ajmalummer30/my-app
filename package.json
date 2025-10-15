@@ -24,6 +24,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "face-api.js": "^0.22.2",
+    "file-saver": "^2.0.5",
     "firebase": "^12.3.0",
     "i18next": "^21.8.15",
     "i18next-browser-languagedetector": "^6.1.8",

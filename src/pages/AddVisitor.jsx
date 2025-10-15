@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../components/Firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -6,29 +6,20 @@ import ImageCropper from "../components/ImageCropper"; // External component
 import AddvisitorTab from "../components/AddvisitorTab";
 import { MuiTelInput } from "mui-tel-input";
 import CountrySelect from "../components/country";
-import { CountrySelector } from "react-international-phone";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "../Helperfunctions/languageswitcher";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import TextField from "@mui/material/TextField";
-import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
-import { Box } from "@mui/material";
-import { getAuth, signOut } from "firebase/auth";
-import SaudiPlateInput from "../components/SaudiPlateInput";
-import { Stack, Typography, FormControl, InputLabel } from "@mui/material";
+import {  Typography, FormControl  } from "@mui/material";
 import { FormHelperText } from "@mui/material";
-import VehicleTypeDropdown from "../components/VehicleTypeDropdown";
 import "react-phone-input-2/lib/style.css";
 import "react-phone-input-2/lang/ar.json"; // Language file
-import PhoneInput from "react-phone-input-2";
-import ar from "react-phone-input-2/lang/ar.json";
 import { arSA, enUS } from "date-fns/locale";
-import GetVisitorData from "../components/GetVisitorData";
-import CameraCapture from "../components/CameraCapture";
 import FaceCapture from "../components/FaceCapture";
 import RowRadioButtonsGroup from "../components/GenderRadioButton";
+import { Dialog, DialogContent, DialogActions, Button } from "@mui/material";
+
 
 
 const VisitorForm = () => {
@@ -42,6 +33,12 @@ const VisitorForm = () => {
   const [docErrors, setDocErrors] = useState({});
   const [capturedImage, setCapturedImage] = useState(null);
    const [gender, setGender] = useState('');
+   const [faceError, setFaceError] = useState("");
+   const [faceResetKey, setFaceResetKey] = useState(0);
+   const [errorModal, setErrorModal] = useState({
+  open: false,
+  message: "",
+});
 
   const [visitor, setVisitor] = useState({
     name: "",
@@ -86,6 +83,8 @@ const VisitorForm = () => {
     type: null,
     imageSrc: null,
   });
+
+
 
   const handleVisitorChange = (e) => {
     const { name, value } = e.target;
@@ -187,194 +186,187 @@ const VisitorForm = () => {
     return await getDownloadURL(fileRef);
   };
 
+
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  setLoading(true);
+  setMessage("");
 
-    console.log("currentloggied in user");
-    console.log(getAuth().currentUser);
+  // Clear previous errors
+  setError({});
+  setDocErrors({});
+  setFaceError("");
 
-    // handleSubmit(e);
-    let newErrors = {};
+  const newErrors = {};
+  const newDocErrors = {};
 
-    // Check visitor fields
+  // ---- Visitor Fields Validation ----
+  if (!visitor.name) newErrors.name = t("This field is required");
+  if (!visitor.visitReason) newErrors.visitReason = t("This field is required");
+  if (!visitor.dateofbirth) newErrors.dateOfBirth = t("This field is required");
+  if (!visitor.nationality) newErrors.nationality = t("This field is required");
+  const saudiMobileRegex = /^(?:\+9665|05)[0-9]{8}$/;
 
-    if (!visitor.name) newErrors.name = t("This field is required");
-    if (!visitor.visitReason)
-      newErrors.visitReason = t("This field is required");
-    if (!visitor.dateofbirth) {
-      newErrors.dateOfBirth = t("This field is required");
-    }
-    if (!visitor.nationality)
-      newErrors.nationality = t("This field is required");
-    if (!visitor.Mobile) {
-      newErrors.Mobile = t("This field is required");
-    } else {
-      // Saudi mobile validation
-      let mobile = visitor.Mobile;
-      if (mobile.startsWith("+966")) {
-        mobile = mobile.slice(4); // remove country code
-      }
-      const ksaMobileRegex = /^5[0-9]{8}$/;
-      if (!ksaMobileRegex.test(mobile)) {
-        newErrors.Mobile = t("Invalid Saudi mobile number");
-      }
-    }
+if (!visitor.Mobile) {
+  newErrors.Mobile = t("This field is required");
+} else if (!saudiMobileRegex.test(visitor.Mobile)) {
+  newErrors.Mobile = t("Please enter a valid Saudi mobile number");
+}console.log("🧩 capturedImage value:", capturedImage);
+  if (!gender) newErrors.gender = t("This field is required");
+  if (!capturedImage) setFaceError(t("Please capture a face image before submitting"));
 
-    if (!gender) {
-  newErrors.gender = t("This field is required");
-}
+  // ---- Document Validation ----
+  const doc = documents[currentTab];
+  if (!doc.documentNumber) newDocErrors.documentNumber = t("Document number is required");
+  if (!doc.expiryDate) newDocErrors.expiryDate = t("Expiry date is required");
 
-    
+  // ---- Combine errors and stop if any ----
+  setError(newErrors);
+  setDocErrors({ [currentTab]: newDocErrors });
 
-    if (Object.keys(newErrors).length > 0) {
-      setError(newErrors);
-      console.log("Erros", error);
+  if (
+    Object.keys(newErrors).length > 0 ||
+    Object.keys(newDocErrors).length > 0 ||
+    !capturedImage
+  ) {
+    setLoading(false);
+    setErrorModal({
+      open: true,
+      message: "❌ Please correct all errors.",
+    });
+    return;
+  }
+
+  try {
+    const visitorsRef = collection(db, "visitors");
+    const documentTypes = ["passport", "iqama", "nationalId"];
+
+    // ---- Check if mobile already exists ----
+    const mobileQuery = query(visitorsRef, where("Mobile", "==", visitor.Mobile.trim()));
+    const mobileSnapshot = await getDocs(mobileQuery);
+    if (!mobileSnapshot.empty) {
+      setError((prev) => ({ ...prev, Mobile: t("Mobile number already exists or registered. Please check.") }));
       setLoading(false);
-      return; // stop submission if errors
-    } else {
-      console.log("ajmal");
-    }
-
-    const doc = documents[currentTab];
-    const newDocErrors = {};
-
-    if (!doc.documentNumber) {
-      newDocErrors.documentNumber = t("Document number is required");
-    }
-    if (!doc.expiryDate) {
-      newDocErrors.expiryDate = t("Expiry date is required");
-    }
-
-    if (Object.keys(newDocErrors).length > 0) {
-      setDocErrors({ [currentTab]: newDocErrors }); // scoped to current tab
-      setLoading(false);
+      setErrorModal({
+        open: true,
+        message: "❌ Please correct all errors.",
+      });
       return;
     }
 
-    setLoading(true);
-    setMessage("");
+    // ---- Check document numbers ----
+    for (const type of documentTypes) {
+      const docNumber = documents[type]?.documentNumber?.trim();
+      if (!docNumber) continue;
 
-    const { passport, iqama, nationalId, gccId } = documents;
-    try {
-      const visitorsRef = collection(db, "visitors");
+      const q = query(visitorsRef, where(`documents.${type}.documentNumber`, "==", docNumber));
+      const snapshot = await getDocs(q);
 
-      const documentTypes = ["passport", "iqama", "nationalId"];
-      const queries = [];
-
-      documentTypes.forEach((type) => {
-        const docNumber = documents[type]?.documentNumber?.trim();
-        if (docNumber) {
-          queries.push(
-            query(
-              visitorsRef,
-              where(`documents.${type}.documentNumber`, "==", docNumber)
-            )
-          );
-        }
-      });
-
-      // Check all queries in parallel
-      for (const q of queries) {
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-          setMessage("❌ Duplicate document number found.");
-          setLoading(false);
-          return;
-        }
+      if (!snapshot.empty) {
+        setDocErrors((prev) => ({
+          ...prev,
+          [type]: {
+            ...(prev[type] || {}),
+            documentNumber: t(`${type} number already exists`),
+          },
+        }));
+        setLoading(false);
+        setErrorModal({
+          open: true,
+          message: "❌ Please correct all errors.",
+        });
+        return;
       }
-
-      // Upload files
-      const passportURL = await uploadFileAndGetURL(
-        passport.fileBlob,
-        "passport"
-      );
-      const iqamaURL = await uploadFileAndGetURL(iqama.fileBlob, "iqama");
-      const gccIdURL = await uploadFileAndGetURL(gccId.fileBlob, "iqama");
-      const nationalIdURL = await uploadFileAndGetURL(
-        nationalId.fileBlob,
-        "nationalId"
-      );
-
-      const payload = {
-        ...visitor,
-        gender :gender,
-        // VehicleType: vehicleType,
-        documents: {
-          passport: {
-            documentNumber: passport.documentNumber,
-            expiryDate: passport.expiryDate,
-            fileURL: passportURL,
-          },
-          iqama: {
-            documentNumber: iqama.documentNumber,
-            expiryDate: iqama.expiryDate,
-            fileURL: iqamaURL,
-          },
-          nationalId: {
-            documentNumber: nationalId.documentNumber,
-            expiryDate: nationalId.expiryDate,
-            fileURL: nationalIdURL,
-          },
-          gccId: {
-            documentNumber: gccId.documentNumber,
-            expiryDate: gccId.expiryDate,
-            fileURL: gccIdURL,
-          },
-        },
-        createdAt: new Date(),
-      };
-
-      await addDoc(visitorsRef, payload);
-      console.log("All required fields are filled!", visitor, documents);
-      setMessage("✅ Visitor and documents submitted successfully!");
-
-      // Reset
-      setVisitor({
-        name: "",
-        email: "",
-        visitReason: "",
-        Mobile: "",
-        nationality: "",
-        dateofbirth: "",
-        companyname:"",
-        
-      });
-      setDocuments({
-        passport: {
-          documentNumber: "",
-          expiryDate: "",
-          file: null,
-          previewURL: null,
-        },
-        iqama: {
-          documentNumber: "",
-          expiryDate: "",
-          file: null,
-          previewURL: null,
-        },
-        nationalId: {
-          documentNumber: "",
-          expiryDate: "",
-          file: null,
-          previewURL: null,
-        },
-        gccId: {
-          documentNumber: "",
-          expiryDate: "",
-          file: null,
-          previewURL: null,
-        },
-      });
-    } catch (error) {
-      setMessage("❌ Error: " + error.message);
     }
 
-    setLoading(false);
+    // ---- Upload files ----
+    const passportURL = await uploadFileAndGetURL(documents.passport.fileBlob, "passport");
+    const iqamaURL = await uploadFileAndGetURL(documents.iqama.fileBlob, "iqama");
+    const gccIdURL = await uploadFileAndGetURL(documents.gccId.fileBlob, "iqama");
+    const nationalIdURL = await uploadFileAndGetURL(documents.nationalId.fileBlob, "nationalId");
+
+    // ---- Upload face image ----
+    const uploadFaceImage = async (base64Data) => {
+      if (!base64Data) return "";
+      const res = await fetch(base64Data);
+      const blob = await res.blob();
+      const fileRef = ref(storage, `faces/face_${Date.now()}.jpg`);
+      await uploadBytes(fileRef, blob);
+      return await getDownloadURL(fileRef);
+    };
+    const faceURL = await uploadFaceImage(capturedImage);
+
+   
+
+    // ---- Prepare payload ----
+    const payload = {
+      ...visitor,
+      gender,
+      capturedFaceURL: faceURL,
+      documents: {
+        passport: {
+          documentNumber: documents.passport.documentNumber,
+          expiryDate: documents.passport.expiryDate,
+          fileURL: passportURL,
+        },
+        iqama: {
+          documentNumber: documents.iqama.documentNumber,
+          expiryDate: documents.iqama.expiryDate,
+          fileURL: iqamaURL,
+        },
+        nationalId: {
+          documentNumber: documents.nationalId.documentNumber,
+          expiryDate: documents.nationalId.expiryDate,
+          fileURL: nationalIdURL,
+        },
+        gccId: {
+          documentNumber: documents.gccId.documentNumber,
+          expiryDate: documents.gccId.expiryDate,
+          fileURL: gccIdURL,
+        },
+      },
+      createdAt: new Date(),
+    };
+
+    await addDoc(visitorsRef, payload);
+   
+    setMessage("✅ Visitor and documents submitted successfully!");
+    setErrorModal({
+      open: true,
+      message: "✅ Visitor and documents submitted successfully.",
+    });
+
+    // ---- Reset form ----
+    setVisitor({
+      name: "",
+      email: "",
+      visitReason: "",
+      Mobile: "",
+      nationality: "",
+      dateofbirth: "",
+      companyname: "",
+    });
+    setDocuments({
+      passport: { documentNumber: "", expiryDate: "", file: null, previewURL: null },
+      iqama: { documentNumber: "", expiryDate: "", file: null, previewURL: null },
+      nationalId: { documentNumber: "", expiryDate: "", file: null, previewURL: null },
+      gccId: { documentNumber: "", expiryDate: "", file: null, previewURL: null },
+    });
+    setCapturedImage(null);
+    setFaceError("");
+    setGender("");
     setError({});
-    setTimeout(() => {
-      setMessage("");
-    }, 5000);
-  };
+    setDocErrors({});
+  } catch (error) {
+    setMessage("❌ Error: " + error.message);
+  }
+
+  setLoading(false);
+  setTimeout(() => setMessage(""), 5000);
+};
+
 
   const onCropCancel = () => {
     setCropModal({ open: false, type: null, imageSrc: null });
@@ -389,13 +381,27 @@ const VisitorForm = () => {
 
   const handleImageCapture = (imageUrl) => {
     setCapturedImage(imageUrl); // Save the captured image URL
+
+     if (imageUrl) setFaceError("");
   };
 
    const handleGenderChange = (event) => {
     setGender(event.target.value);
-     console.log("Selected gender:", event.target.value);
+    setError((prev) => ({ ...prev, gender: "" }));
     // You can also do other things here when the value changes
   }
+
+
+
+const clearError = (field, tab) => {
+  setDocErrors((prev) => ({
+    ...prev,
+    [tab]: {
+      ...prev[tab],
+      [field]: "",
+    },
+  }));
+};
 
   return (
     <div className="w-full grid grid-cols-1  gap-4 px-4">
@@ -530,9 +536,10 @@ const VisitorForm = () => {
                     defaultCountry="SA"
                     value={visitor.Mobile}
                     dir={i18n.language === "ar" ? "rtl" : "ltr"}
-                    onChange={(phone) =>
-                      setVisitor((prev) => ({ ...prev, Mobile: phone }))
-                    }
+                    onChange={(phone) => {
+      setVisitor((prev) => ({ ...prev, Mobile: phone }));
+      setError((prev) => ({ ...prev, Mobile: "" })); // ✅ Clear error as user types
+    }}
                     placeholder={
                       isArabic ? "أدخل رقم الجوال" : "Enter phone number *"
                     }
@@ -615,7 +622,12 @@ const VisitorForm = () => {
               <FaceCamera />
             </div> */}
             <div>
-              <FaceCapture onCapture={handleImageCapture} />
+              <FaceCapture onCapture={handleImageCapture} reset={capturedImage === null} />
+              {faceError && (
+    <p className="text-sm text-red-600 font-medium">
+      {faceError}
+    </p>
+  )}
             </div>
 
             <AddvisitorTab
@@ -626,6 +638,7 @@ const VisitorForm = () => {
               setCurrentTab={setCurrentTab}
               error={docErrors[currentTab] || {}}
               handleImageRemove={handleImageRemove}
+               clearError={clearError}
             />
             {/* Submit */}
             <button
@@ -659,6 +672,33 @@ const VisitorForm = () => {
           />
         )}
       </div>
+
+      {/* Error Modal */}
+<Dialog
+  open={errorModal.open}
+  onClose={() => setErrorModal({ ...errorModal, open: false })}
+  maxWidth="xs"
+  fullWidth
+>
+  <DialogContent className="flex flex-col items-center justify-center py-6">
+    <Typography variant="h4" color="error">
+      
+    </Typography>
+    <Typography variant="body1" className="mt-2 text-center">
+      {errorModal.message}
+    </Typography>
+  </DialogContent>
+  <DialogActions>
+    <Button
+      onClick={() => setErrorModal({ ...errorModal, open: false })}
+      color="primary"
+      variant="contained"
+      fullWidth
+    >
+      Close
+    </Button>
+  </DialogActions>
+</Dialog>
 
      {/*  <div className="bg-white p-6 rounded-md shadow-md xl:w-auto w-auto h-full">
         <div className="text-lg font-semibold">Dummy Data</div>

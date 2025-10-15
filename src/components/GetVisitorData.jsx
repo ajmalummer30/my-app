@@ -4,6 +4,8 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import VehicleInfoForm from "../components/VehicleInfoForm";
 import { useTranslation } from "react-i18next";
+import exportVisitsToCSV from "../Helperfunctions/ExportCsv"
+
 
 // MUI Modal
 import {
@@ -56,6 +58,7 @@ const VisitorsIDCards = (props) => {
         ...doc.data(),
       }));
       setVisitors(visitorsData);
+      console.log(visitorsData)
       setLoading(false);
     });
 
@@ -150,12 +153,19 @@ const VisitorsIDCards = (props) => {
    const handleSubmitVehicleInfo = async () => {
     // Basic validation
     const errors = {};
-    if (!vehicleInfo.vehicleplatenumber) {
-      errors.vehicleplatenumber = "Plate number is required";
-    }
+   
     if (!vehicleInfo.vehicleType) {
       errors.vehicleType = "Vehicle type is required";
     }
+
+    // Plate number is required only if vehicleType is not 'walk'
+  if (
+    vehicleInfo.vehicleType &&
+    vehicleInfo.vehicleType.toLowerCase() !== "walk" &&
+    !vehicleInfo.vehicleplatenumber
+  ) {
+    errors.vehicleplatenumber = "Plate number is required";
+  }
 
     if (Object.keys(errors).length > 0) {
       setVehicleError(errors);
@@ -173,6 +183,7 @@ const VisitorsIDCards = (props) => {
         station: userStation || "Unknown",
         vehicleplatenumber: vehicleInfo.vehicleplatenumber,
         vehicleType: vehicleInfo.vehicleType,
+        capturedFaceURL: selectedVisitor.capturedFaceURL || ""
       });
 
       setVisitorStatus(prev => ({
@@ -228,10 +239,12 @@ const VisitorsIDCards = (props) => {
   };
 
   const handleVehicleTypeChange = (event) => {
-    console.log("type" +event)
+   
     setVehicleInfo((prev) => ({
       ...prev,
       vehicleType: event.target.value,
+      // Clear plate number if type is 'walk'
+    vehicleplatenumber:  event.target.value.toLowerCase() === "walk" ? "" : prev.vehicleplatenumber,
     }));
   };
 
@@ -259,6 +272,12 @@ const VisitorsIDCards = (props) => {
     const mobile = visitor.Mobile?.toLowerCase() || "";
     return name.includes(term) || mobile.includes(term);
   }).map((visitor) => {
+
+     const imageUrl =
+        visitor.capturedFaceURL && visitor.capturedFaceURL.trim() !== ""
+          ? visitor.capturedFaceURL
+          : `https://i.pravatar.cc/80?u=${visitor.id}`;
+
             return (
               <div
                 key={visitor.id}
@@ -266,8 +285,8 @@ const VisitorsIDCards = (props) => {
               >
                 <div className="flex-shrink-0">
                   <img
-                    src={`https://i.pravatar.cc/80?u=${visitor.id}`}
-                    alt={visitor.name}
+                   src={imageUrl}
+              alt={visitor.name || "Visitor"}
                     className="hidden 2xl:block w-10 h-10 sm:w-15 sm:h-15 rounded-full object-cover border-2 border-indigo-600"
                   />
                 </div>
@@ -316,6 +335,15 @@ const VisitorsIDCards = (props) => {
             );
           })}
         </div>
+
+        <Button
+  variant="contained"
+  color="primary"
+  onClick={() => exportVisitsToCSV(getvisitors)}
+>
+  Export CSV
+</Button>
+
       </div>
 
       {/* ✅ Vehicle Modal */}
